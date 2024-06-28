@@ -1,0 +1,22 @@
+dut: xlfl0000
+rocs:
+  0: "b"
+  1: "c"
+  2: "d"
+controllerIP: 10.116.24.233 # ip address of the teststand
+zynqAppBasedURL: http://10.116.24.233:8080
+odir: /home/daq/Desktop/hexaboard-gui/data # output directory
+daq_and_fe_configuration: configs/initLD-trophyV3.yaml # initial configuration yaml file"
+daqPort: 6000    # port of the zynq waiting for daq config and commands (configure/start/stop/is_done)
+i2cPort: 5555    # port of the zynq waiting for I2C config and commands (initialize/configure/read_pwr,read/measadc)
+pullerPort: 7000 # port of the client PC (loccalhost for the moment) waiting for daq config and commands (configure/start/stop)
+redis_template: configs/redis-template.yaml # template file for storing test result in redis 
+power_monitoring:
+  BV: 
+    key: PowerSuppliesHV
+    Imon: PowerSupplies/Keithley2410/pool05550010/I
+    Vmon: PowerSupplies/Keithley2410/pool05550010/V
+  LV:
+    key: PowerSuppliesLV
+    Imon: PowerSupplies/PS_LabLV/I1
+    Vmon: PowerSupplies/PS_LabLV/V1

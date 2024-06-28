@@ -1,0 +1,22 @@
+dut: xlfl0000
+rocs:
+  0: "TOKEN_ROC_0_BARCODE"
+  1: "TOKEN_ROC_1_BARCODE"
+  2: "TOKEN_ROC_2_BARCODE"
+controllerIP: TOKEN_HEXACONTROLLER_ADDRESS # ip address of the teststand
+zynqAppBasedURL: http://TOKEN_HEXACONTROLLER_ADDRESS:TOKEN_ZYNQ_PORT
+odir: TOKEN_OUTDIR # output directory
+daq_and_fe_configuration: configs/initLD-trophyV3.yaml # initial configuration yaml file"
+daqPort: TOKEN_DAQ_SERVER_PORT    # port of the zynq waiting for daq config and commands (configure/start/stop/is_done)
+i2cPort: TOKEN_I2C_SERVER_PORT    # port of the zynq waiting for I2C config and commands (initialize/configure/read_pwr,read/measadc)
+pullerPort: TOKEN_DAQ_CLIENT_PORT # port of the client PC (loccalhost for the moment) waiting for daq config and commands (configure/start/stop)
+redis_template: configs/redis-template.yaml # template file for storing test result in redis 
+power_monitoring:
+  BV: 
+    key: PowerSuppliesHV
+    Imon: PowerSupplies/Keithley2410/pool05550010/I
+    Vmon: PowerSupplies/Keithley2410/pool05550010/V
+  LV:
+    key: PowerSuppliesLV
+    Imon: PowerSupplies/PS_LabLV/I1
+    Vmon: PowerSupplies/PS_LabLV/V1
