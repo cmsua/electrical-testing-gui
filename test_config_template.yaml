@@ -1,4 +1,4 @@
-dut: xlfl0000
+dut: TOKEN_BOARD_BARCODE
 rocs:
   0: "TOKEN_ROC_0_BARCODE"
   1: "TOKEN_ROC_1_BARCODE"

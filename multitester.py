@@ -1,10 +1,10 @@
 from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtWidgets import QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PyQt6.QtWidgets import QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTextEdit, QLabel, QPushButton
 from misc_widgets import ScannerLineEdit
 
 from config import config
 
-import os, logging, subprocess
+import os, logging, subprocess, io
 
 class TestingArea(QWidget):
     def __init__(self) -> None:
@@ -19,20 +19,32 @@ class TestingArea(QWidget):
         label.setFont(font)
         layout.addWidget(label)
         
-        # Data Section
+        # Data Section, Tabs below
         dataLayout = QHBoxLayout()
+        tabs = QTabWidget()
         
         hexacontrollers = config.getHexacontrollers()
-        self.status_columns = [ InputColumn(controller) for controller in hexacontrollers ]
-        for column in self.status_columns:
+        self.textAreas = {}
+        for controller in hexacontrollers:
+            # Create log text area
+            textArea = QTextEdit()
+            textArea.setEnabled(True)
+            self.textAreas[controller] = textArea
+            tabs.addTab(textArea, config.getHexacontrollerName(controller))
+
+            # Create Column
+            column = InputColumn(controller)
+            column.line.connect(textArea.append)
             dataLayout.addWidget(column)
         
         dataLayout.addStretch()
-
-        # Finish Setup
         dataWidget = QWidget()
         dataWidget.setLayout(dataLayout)
         layout.addWidget(dataWidget)
+
+        layout.addWidget(tabs)
+
+        # Finish Setup
 
         layout.addStretch()
 
@@ -40,6 +52,8 @@ class TestingArea(QWidget):
 
 # A column that asks for all applicable inputs
 class InputColumn(QWidget):
+    line = pyqtSignal(str)
+
     def __init__(self, hexacontrollerId: str) -> None:
         super().__init__()
         self.id = hexacontrollerId
@@ -94,6 +108,7 @@ class InputColumn(QWidget):
         with open(config.getTestConfigTemplate(), "r") as template:
             testConfig = template.read()
             # Replace key values
+            testConfig = testConfig.replace("TOKEN_BOARD_BARCODE", self.boardField.text())
             testConfig = testConfig.replace("TOKEN_ROC_0_BARCODE", self.hgroc0Field.text())
             testConfig = testConfig.replace("TOKEN_ROC_1_BARCODE", self.hgroc1Field.text())
             testConfig = testConfig.replace("TOKEN_ROC_2_BARCODE", self.hgroc2Field.text())
@@ -122,7 +137,7 @@ class InputColumn(QWidget):
 
     # Called each time the test script prints a new line
     def new_line(self, line):
-        print(line)
+        self.line.emit(line)
         
     # Re-Enable Tests after finished
     def enable_tests(self):
@@ -159,15 +174,11 @@ class TestThread(QThread):
         daqClient = subprocess.Popen([ f"{ config.getHexactrlSoftwareDir() }/bin/daq-client", "-p", str(self.daqClientPort) ])
         
         self.logger.debug("Starting Test Process")
-        proc = subprocess.Popen([ f"{ config.getHexactrlScriptDir() }/venv/bin/python3", "hexaboard-V3B-production-test-ua.py", "-i", self.config ], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen([ "./venv/bin/python3", "hexaboard-V3B-production-test-ua.py", "-i", self.config ], env=env, cwd=config.getHexactrlScriptDir(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         # Read process till done
-        while True:
-            line = proc.stdout.readline()
-            if not line:
-                break
-
-            self.lineSignal.emit(line)
+        for line in io.TextIOWrapper(proc.stdout, encoding='utf-8'):
+            self.line.emit(line)
 
         self.logger.info("Tests Finished, Killing Daq Client")
         daqClient.kill()
