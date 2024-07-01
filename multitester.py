@@ -1,10 +1,16 @@
 from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtGui import QTextCursor, QPalette
 from PyQt6.QtWidgets import QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTextEdit, QLabel, QPushButton
 from misc_widgets import ScannerLineEdit
 
 from config import config
 
-import os, logging, subprocess, io
+import os, logging, subprocess, io, re
+from functools import partial
+
+from ansi2html import Ansi2HTMLConverter
+console_color = re.compile(r"\[\d{,3}(;\d{,3}){4}m")
+converter = Ansi2HTMLConverter()
 
 class TestingArea(QWidget):
     def __init__(self) -> None:
@@ -28,13 +34,23 @@ class TestingArea(QWidget):
         for controller in hexacontrollers:
             # Create log text area
             textArea = QTextEdit()
-            textArea.setEnabled(True)
+            textArea.setReadOnly(True)
+            pallete = textArea.palette()
+            pallete.setColor(QPalette.ColorRole.Base, 0)
+            textArea.setPalette(pallete)
+
             self.textAreas[controller] = textArea
             tabs.addTab(textArea, config.getHexacontrollerName(controller))
 
             # Create Column
+            def insertLine(controller: str, line: str) -> None:
+                self.textAreas[controller].moveCursor(QTextCursor.MoveOperation.End)
+                self.textAreas[controller].insertHtml(line)
+                self.textAreas[controller].moveCursor(QTextCursor.MoveOperation.End)
+
             column = InputColumn(controller)
-            column.line.connect(textArea.append)
+            column.line.connect(partial(insertLine, controller))
+            column.clear.connect(textArea.clear)
             dataLayout.addWidget(column)
         
         dataLayout.addStretch()
@@ -53,6 +69,7 @@ class TestingArea(QWidget):
 # A column that asks for all applicable inputs
 class InputColumn(QWidget):
     line = pyqtSignal(str)
+    clear = pyqtSignal()
 
     def __init__(self, hexacontrollerId: str) -> None:
         super().__init__()
@@ -90,7 +107,7 @@ class InputColumn(QWidget):
 
         self.setLayout(layout)
 
-    def start_test(self):
+    def start_test(self) -> None:
         logger = logging.getLogger(self.id)
         logger.info("Starting test for " + self.id)
         
@@ -129,18 +146,24 @@ class InputColumn(QWidget):
                 testConfigFile.write(testConfig)
                 logger.debug(f"Written test config to {testConfigFile}")
 
+        # Create Output Dir if not exists
+        if not os.path.exists(config.getOutputDir()):
+            logger.info(f"Output directory does not exist. Creating {config.getOutputDir()}")
+            os.makedirs(config.getOutputDir())
+
         # Start Tests
-        self.test_thread = TestThread(logger, testConfigPath, config.getHexacontrollerDaqClientPort(self.id))
+        self.clear.emit()
+        self.test_thread = TestThread(logger, testConfigPath, config.getHexacontrollerDaqClientPort(self.id), self.boardField.text())
         self.test_thread.finished.connect(self.enable_tests)
         self.test_thread.line.connect(self.new_line)
         self.test_thread.start()
 
     # Called each time the test script prints a new line
-    def new_line(self, line):
+    def new_line(self, line: str) -> None:
         self.line.emit(line)
         
     # Re-Enable Tests after finished
-    def enable_tests(self):
+    def enable_tests(self) -> None:
         self.boardField.setEnabled(True)
         self.hgroc0Field.setEnabled(True)
         self.hgroc1Field.setEnabled(True)
@@ -155,13 +178,14 @@ class TestThread(QThread):
     # Line Out Signal
     line = pyqtSignal(str)
 
-    def __init__(self, logger, config, daqClientPort):
+    def __init__(self, logger, config, daqClientPort, name):
         super().__init__()
         self.logger = logger
         self.config = config
         self.daqClientPort = daqClientPort
+        self.name = name
     
-    def run(self):
+    def run(self) -> None:
         # Recreate environment and such
         env = os.environ.copy()
         env["PATH"] = f"{ config.getHexactrlSoftwareDir() }/bin:{ env['PATH'] }"
@@ -171,14 +195,22 @@ class TestThread(QThread):
 
         # Start Processes
         self.logger.debug("Starting DAQ Client")
-        daqClient = subprocess.Popen([ f"{ config.getHexactrlSoftwareDir() }/bin/daq-client", "-p", str(self.daqClientPort) ])
+        daqClientLog = open(f"{ config.getOutputDir() }/{ self.name }-daq-client.log", "w")
+        daqClient = subprocess.Popen([ f"{ config.getHexactrlSoftwareDir() }/bin/daq-client", "-p", str(self.daqClientPort) ], stdout=daqClientLog, stderr=subprocess.STDOUT)
         
         self.logger.debug("Starting Test Process")
+        testLog = open(f"{ config.getOutputDir() }/{ self.name }.log", "w")
         proc = subprocess.Popen([ "./venv/bin/python3", "hexaboard-V3B-production-test-ua.py", "-i", self.config ], env=env, cwd=config.getHexactrlScriptDir(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         # Read process till done
         for line in io.TextIOWrapper(proc.stdout, encoding='utf-8'):
-            self.line.emit(line)
+            line = console_color.sub("", line)
+
+            testLog.write(line)
+            self.line.emit(converter.convert(line))
 
         self.logger.info("Tests Finished, Killing Daq Client")
         daqClient.kill()
+
+        daqClientLog.close()
+        testLog.close()
