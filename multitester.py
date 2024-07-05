@@ -2,7 +2,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from config import config
 
-import os, logging, subprocess, io, re
+import os, logging, subprocess, io, re, requests
 
 from ansi2html import Ansi2HTMLConverter
 console_color = re.compile(r"\[\d{,3}(;\d{,3}){4}m")
@@ -10,7 +10,7 @@ converter = Ansi2HTMLConverter()
 
 def setup_test(id, board, hgroc0, hgroc1, hgroc2) -> None:
     logger = logging.getLogger(id)
-    logger.info("Starting test for " + id)
+    logger.info("Setting up test for " + id)
     
     # Create Config
     testConfigPath = os.path.join(config.getTestConfigDir(), id + ".yaml")
@@ -68,6 +68,12 @@ class TestThread(QThread):
         env["SOURCE"] = f"{ config.getHexactrlScriptDir() }/analysis/etc/env.sh"
         env["BASEDIR"] = f"{ config.getHexactrlScriptDir() }/analysis"
 
+        # Power On Board
+        logger.debug("Powering On Hexaboard")
+        command_url = f"http://{ config.getHexacontrollerAddress(self.id) }:{ config.getHexacontrollerZynqPort(self.id) }/command"
+        power_status = requests.put(command_url, json={ "name": "pwr_on" })
+        logger.debug(f"Hexaboard is powered with status { power_status.json() }")
+
         # Start Processes
         logger.debug("Starting DAQ Client")
         daqClientLog = open(f"{ config.getOutputDir() }/{ self.name }-daq-client.log", "w")
@@ -90,3 +96,8 @@ class TestThread(QThread):
 
         daqClientLog.close()
         testLog.close()
+
+        # Power On Board
+        logger.debug("Powering Off Hexaboard")
+        power_status = requests.put(command_url, json={ "name": "pwr_off" })
+        logger.debug(f"Hexaboard is unpowered with status { power_status }")
