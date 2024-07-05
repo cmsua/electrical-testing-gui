@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel
 
 from status_widget import StatusBox
-from multitester import TestingArea
+from multitester_widget import TestingArea
 import sys
 
 class MainWindow(QMainWindow):
