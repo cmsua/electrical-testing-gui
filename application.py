@@ -8,11 +8,11 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
 
-        self.setWindowTitle("Hexaboard Testing")
+        self.setWindowTitle("Hexaboard Electrical Testing")
         layout = QVBoxLayout()
 
         # Add Header
-        header = QLabel("Hexaboard Testing GUI")
+        header = QLabel("Hexaboard Electrical Testing GUI")
         font = header.font()
         font.setPointSize(font.pointSize() * 2)
         header.setFont(font)

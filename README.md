@@ -1,4 +1,4 @@
-# Hexaboard Module Testing GUI
+# Hexaboard Electrical Testing GUI
 ## University of Alabama
 
 ## Installation
@@ -7,7 +7,7 @@ This repository is designed to install from source.
 
 ```bash
 # Clone the Repository
-git clone https://github.com/cmsua/hexaboard-gui.git
+git clone https://github.com/cmsua//electrical-testing-gui.git
 cd hexaboard-gui
 
 # Setup a Virtual Environment
