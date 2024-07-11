@@ -1,5 +1,5 @@
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QTextCursor, QPalette
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QTextCursor, QPalette, QPixmap, QPainter, QImage
 from PyQt6.QtWidgets import QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTextEdit, QLabel, QPushButton
 from misc_widgets import ScannerLineEdit
 
@@ -33,7 +33,18 @@ class TestingArea(QWidget):
         
         hexacontrollers = config.getHexacontrollers()
         self.textAreas = {}
+        self.imageLabels = {}
         for controller in hexacontrollers:
+            tabLayout = QHBoxLayout()
+
+            # Create Image
+            label = QLabel("Plot will go here.")
+            label.setMaximumWidth(1024)
+            label.setMinimumWidth(1024)
+            label.setMaximumHeight(1024)
+            self.imageLabels[controller] = label
+            tabLayout.addWidget(label)
+
             # Create log text area
             textArea = QTextEdit()
             textArea.setReadOnly(True)
@@ -42,17 +53,29 @@ class TestingArea(QWidget):
             textArea.setPalette(pallete)
 
             self.textAreas[controller] = textArea
-            tabs.addTab(textArea, config.getHexacontrollerName(controller))
+            tabLayout.addWidget(textArea)
 
-            # Create Column
+            # Add Tab
+            tabWidget = QWidget()
+            tabWidget.setLayout(tabLayout)
+
+            tabs.addTab(tabWidget, config.getHexacontrollerName(controller))
+
+            # On line recieve
             def insertLine(controller: str, line: str) -> None:
                 self.textAreas[controller].moveCursor(QTextCursor.MoveOperation.End)
                 self.textAreas[controller].insertHtml(line)
                 self.textAreas[controller].moveCursor(QTextCursor.MoveOperation.End)
 
+            # On image recieve
+            def setImage(controller, image: QPixmap) -> None:
+                 label = self.imageLabels[controller]
+                 label.setPixmap(image.scaled(label.maximumWidth(), label.maximumHeight(), Qt.AspectRatioMode.KeepAspectRatio))
+
             column = InputColumn(controller)
             column.line.connect(partial(insertLine, controller))
             column.clear.connect(textArea.clear)
+            column.image.connect(partial(setImage, controller))
             dataLayout.addWidget(column)
         
         dataLayout.addStretch()
@@ -71,6 +94,7 @@ class TestingArea(QWidget):
 # A column that asks for all applicable inputs
 class InputColumn(QWidget):
     line = pyqtSignal(str)
+    image = pyqtSignal(QPixmap)
     clear = pyqtSignal()
 
     def __init__(self, hexacontrollerId: str) -> None:
@@ -121,12 +145,13 @@ class InputColumn(QWidget):
 
         self.button.setText("Test In Progress...")
         self.button.setEnabled(False)
+
         multitester.setup_test(self.id, self.boardField.text(), self.hgroc0Field.text(), self.hgroc1Field.text(), self.hgroc2Field.text())
 
         # Start Tests
         self.clear.emit()
         self.test_thread = multitester.TestThread(self.id, self.boardField.text())
-        self.test_thread.finished.connect(self.enable_tests)
+        self.test_thread.finished.connect(self.finish_test)
         self.test_thread.line.connect(self.new_line)
         self.test_thread.start()
 
@@ -135,7 +160,7 @@ class InputColumn(QWidget):
         self.line.emit(line)
         
     # Re-Enable Tests after finished
-    def enable_tests(self) -> None:
+    def finish_test(self) -> None:
         self.boardField.setEnabled(True)
         self.hgroc0Field.setEnabled(True)
         self.hgroc1Field.setEnabled(True)
@@ -143,3 +168,37 @@ class InputColumn(QWidget):
 
         self.button.setText("Start Test")
         self.button.setEnabled(True)
+
+        # Emit images
+        pedestal_run_dir = f"{ config.getOutputDir() }/{ self.boardField.text() }/pedestal_run"
+        try:
+            # Find latest
+            files = os.listdir(pedestal_run_dir)
+
+            times = [ os.stat(f"{ pedestal_run_dir }/{ file }").st_mtime for file in files ]
+            latest = files[max(range(len(times)), key=times.__getitem__)]
+
+            # Load pixmaps
+            images = [
+                QPixmap(f"{ pedestal_run_dir }/{ latest }/noise_vs_channel_chip0.png"),
+                QPixmap(f"{ pedestal_run_dir }/{ latest }/noise_vs_channel_chip1.png"),
+                QPixmap(f"{ pedestal_run_dir }/{ latest }/noise_vs_channel_chip2.png")
+            ]
+
+            # Stitch together
+            stitched = QPixmap(sum([ image.width() for image in images ]), max([ image.height() for image in images ]))
+            painter = QPainter(stitched)
+            painter.setBackground(0)
+            painter.setPen(0)
+            painter.drawRect(0,0,100,100)
+            x_pos = 0
+            for image in images:
+                painter.drawPixmap(x_pos, 0, image.width(), image.height(), image)
+                x_pos = x_pos + image.width()
+
+            # Exit
+            painter.end()
+            self.image.emit(stitched)
+
+        except Exception as e:
+            print(e)
