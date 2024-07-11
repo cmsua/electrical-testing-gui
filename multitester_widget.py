@@ -8,6 +8,7 @@ from config import config
 import multitester
 
 import os, logging, re
+from datetime import datetime
 from functools import partial
 
 from ansi2html import Ansi2HTMLConverter
@@ -135,7 +136,8 @@ class InputColumn(QWidget):
 
     def start_test(self) -> None:
         logger = logging.getLogger(self.id)
-        logger.info("Starting test for " + self.id)
+        self.timestamp = datetime.now().isoformat()
+        logger.info("Starting test for " + self.id + " at " + self.timestamp)
         
         # Disable inputs till test is concluded
         self.boardField.setEnabled(False)
@@ -146,11 +148,11 @@ class InputColumn(QWidget):
         self.button.setText("Test In Progress...")
         self.button.setEnabled(False)
 
-        multitester.setup_test(self.id, self.boardField.text(), self.hgroc0Field.text(), self.hgroc1Field.text(), self.hgroc2Field.text())
+        multitester.setup_test(self.id, self.boardField.text(), self.hgroc0Field.text(), self.hgroc1Field.text(), self.hgroc2Field.text(), self.timestamp)
 
         # Start Tests
         self.clear.emit()
-        self.test_thread = multitester.TestThread(self.id, self.boardField.text())
+        self.test_thread = multitester.TestThread(self.id, self.boardField.text(), self.timestamp)
         self.test_thread.finished.connect(self.finish_test)
         self.test_thread.line.connect(self.new_line)
         self.test_thread.start()
@@ -170,7 +172,7 @@ class InputColumn(QWidget):
         self.button.setEnabled(True)
 
         # Emit images
-        pedestal_run_dir = f"{ config.getOutputDir() }/{ self.boardField.text() }/pedestal_run"
+        pedestal_run_dir = f"{ config.getOutputDir() }/{ self.boardField.text() }-{ self.timestamp }/pedestal_run"
         try:
             # Find latest
             files = os.listdir(pedestal_run_dir)

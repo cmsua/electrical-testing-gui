@@ -8,17 +8,18 @@ from ansi2html import Ansi2HTMLConverter
 console_color = re.compile(r"\[\d{,3}(;\d{,3}){4}m")
 converter = Ansi2HTMLConverter()
 
-def setup_test(id, board, hgroc0, hgroc1, hgroc2) -> None:
+def setup_test(id, board, hgroc0, hgroc1, hgroc2, timestamp) -> None:
     logger = logging.getLogger(id)
     logger.info("Setting up test for " + id)
     
     # Create Config
     testConfigPath = os.path.join(config.getTestConfigDir(), id + ".yaml")
+    outDir = f"{ config.getOutputDir() }"
     with open(config.getTestConfigTemplate(), "r") as template:
         testConfig = template.read()
         
         # Replace key values
-        testConfig = testConfig.replace("TOKEN_BOARD_BARCODE", board)
+        testConfig = testConfig.replace("TOKEN_BOARD_BARCODE", board + "-" + timestamp)
         testConfig = testConfig.replace("TOKEN_ROC_0_BARCODE", hgroc0)
         testConfig = testConfig.replace("TOKEN_ROC_1_BARCODE", hgroc1)
         testConfig = testConfig.replace("TOKEN_ROC_2_BARCODE", hgroc2)
@@ -27,7 +28,7 @@ def setup_test(id, board, hgroc0, hgroc1, hgroc2) -> None:
         testConfig = testConfig.replace("TOKEN_DAQ_CLIENT_PORT", config.getHexacontrollerDaqClientPort(id))
         testConfig = testConfig.replace("TOKEN_DAQ_SERVER_PORT", config.getHexacontrollerDaqServerPort(id))
         testConfig = testConfig.replace("TOKEN_I2C_SERVER_PORT", config.getHexacontrollerI2CServerPort(id))
-        testConfig = testConfig.replace("TOKEN_OUTDIR", config.getOutputDir())
+        testConfig = testConfig.replace("TOKEN_OUTDIR", outDir)
 
         # Create Config Dir if not exists
         if not os.path.exists(config.getTestConfigDir()):
@@ -40,9 +41,9 @@ def setup_test(id, board, hgroc0, hgroc1, hgroc2) -> None:
             logger.debug(f"Written test config to {testConfigFile}")
 
     # Create Output Dir if not exists
-    if not os.path.exists(config.getOutputDir()):
-        logger.info(f"Output directory does not exist. Creating {config.getOutputDir()}")
-        os.makedirs(config.getOutputDir())
+    if not os.path.exists(outDir):
+        logger.info(f"Output directory does not exist. Creating {outDir}")
+        os.makedirs(outDir)
 
     return testConfigPath
 
@@ -52,10 +53,11 @@ class TestThread(QThread):
     # Line Out Signal
     line = pyqtSignal(str)
 
-    def __init__(self, id, name):
+    def __init__(self, id, name, timestamp):
         super().__init__()
         self.id = id
         self.name = name
+        self.timestamp = timestamp
     
     def run(self) -> None:
         logger = logging.getLogger(self.id)
@@ -76,12 +78,12 @@ class TestThread(QThread):
 
         # Start Processes
         logger.debug("Starting DAQ Client")
-        daqClientLog = open(f"{ config.getOutputDir() }/{ self.name }-daq-client.log", "w")
+        daqClientLog = open(f"{ config.getOutputDir() }/{ self.name }-{ self.timestamp }-daq-client.log", "w")
         daqClient = subprocess.Popen([ f"{ config.getHexactrlSoftwareDir() }/bin/daq-client", "-p", str(config.getHexacontrollerDaqClientPort(self.id)) ], stdout=daqClientLog, stderr=subprocess.STDOUT)
         
         logger.debug("Starting Test Process")
         testConfigPath = os.path.join(config.getTestConfigDir(), self.id + ".yaml")
-        testLog = open(f"{ config.getOutputDir() }/{ self.name }.log", "w")
+        testLog = open(f"{ config.getOutputDir() }/{ self.name }-{ self.timestamp }.log", "w")
         proc = subprocess.Popen([ "./venv/bin/python3", "hexaboard-V3B-production-test-ua.py", "-i", testConfigPath ], env=env, cwd=config.getHexactrlScriptDir(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         # Read process till done
