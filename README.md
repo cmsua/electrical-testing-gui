@@ -5,6 +5,8 @@
 
 This repository is designed to install from source.
 
+Python 3.10 or above is required for this program due to using `type | None` sytnax.
+
 ```bash
 # Clone the Repository
 git clone https://github.com/cmsua//electrical-testing-gui.git

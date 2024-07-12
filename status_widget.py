@@ -12,7 +12,7 @@ class StatusBox(QWidget):
         # Label
         label = QLabel("Hexacontroller Status")
         font = label.font()
-        font.setPointSize(font.pointSize() * 1.5)
+        font.setPointSize(int(font.pointSize() * 1.5))
         label.setFont(font)
         layout.addWidget(label)
         

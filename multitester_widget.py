@@ -1,5 +1,5 @@
 from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtGui import QTextCursor, QPalette, QPixmap, QPainter, QImage
+from PyQt6.QtGui import QTextCursor, QPalette, QPixmap, QPainter
 from PyQt6.QtWidgets import QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTextEdit, QLabel, QPushButton
 from misc_widgets import ScannerLineEdit
 
@@ -24,13 +24,14 @@ class TestingArea(QWidget):
         # Label
         label = QLabel("Testing Data")
         font = label.font()
-        font.setPointSize(font.pointSize() * 1.5)
+        font.setPointSize(int(font.pointSize() * 1.5))
         label.setFont(font)
         layout.addWidget(label)
         
         # Data Section, Tabs below
         dataLayout = QHBoxLayout()
-        tabs = QTabWidget()
+        logTabs = QTabWidget()
+        imageTabs = QTabWidget()
         
         hexacontrollers = config.getHexacontrollers()
         self.textAreas = {}
@@ -40,11 +41,11 @@ class TestingArea(QWidget):
 
             # Create Image
             label = QLabel("Plot will go here.")
-            label.setMaximumWidth(1024)
-            label.setMinimumWidth(1024)
+            label.setMaximumWidth(1536)
+            label.setMinimumWidth(1536)
             label.setMaximumHeight(1024)
             self.imageLabels[controller] = label
-            tabLayout.addWidget(label)
+            imageTabs.addTab(label, config.getHexacontrollerName(controller))
 
             # Create log text area
             textArea = QTextEdit()
@@ -54,13 +55,8 @@ class TestingArea(QWidget):
             textArea.setPalette(pallete)
 
             self.textAreas[controller] = textArea
-            tabLayout.addWidget(textArea)
+            logTabs.addTab(textArea, config.getHexacontrollerName(controller))
 
-            # Add Tab
-            tabWidget = QWidget()
-            tabWidget.setLayout(tabLayout)
-
-            tabs.addTab(tabWidget, config.getHexacontrollerName(controller))
 
             # On line recieve
             def insertLine(controller: str, line: str) -> None:
@@ -69,10 +65,13 @@ class TestingArea(QWidget):
                 self.textAreas[controller].moveCursor(QTextCursor.MoveOperation.End)
 
             # On image recieve
-            def setImage(controller, image: QPixmap) -> None:
-                 label = self.imageLabels[controller]
-                 label.setPixmap(image.scaled(label.maximumWidth(), label.maximumHeight(), Qt.AspectRatioMode.KeepAspectRatio))
-
+            def setImage(controller, image: QPixmap | None) -> None:
+                label = self.imageLabels[controller]
+                if image is None:
+                    label.setText("Plot will go here.")
+                else:
+                    image = image.scaled(label.maximumWidth(), label.maximumHeight(), Qt.AspectRatioMode.KeepAspectRatio)
+                    label.setPixmap(image)
             column = InputColumn(controller)
             column.line.connect(partial(insertLine, controller))
             column.clear.connect(textArea.clear)
@@ -84,7 +83,8 @@ class TestingArea(QWidget):
         dataWidget.setLayout(dataLayout)
         layout.addWidget(dataWidget)
 
-        layout.addWidget(tabs)
+        layout.addWidget(logTabs)
+        layout.addWidget(imageTabs)
 
         # Finish Setup
 
@@ -95,7 +95,7 @@ class TestingArea(QWidget):
 # A column that asks for all applicable inputs
 class InputColumn(QWidget):
     line = pyqtSignal(str)
-    image = pyqtSignal(QPixmap)
+    image = pyqtSignal(object)
     clear = pyqtSignal()
 
     def __init__(self, hexacontrollerId: str) -> None:
@@ -152,6 +152,7 @@ class InputColumn(QWidget):
 
         # Start Tests
         self.clear.emit()
+        self.image.emit(None)
         self.test_thread = multitester.TestThread(self.id, self.boardField.text(), self.timestamp)
         self.test_thread.finished.connect(self.finish_test)
         self.test_thread.line.connect(self.new_line)
