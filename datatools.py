@@ -114,17 +114,25 @@ def filter_no_logs(info: tarfile.TarInfo) -> tarfile.TarInfo:
 def archive_test(test_id: str, delete_uncompressed: False) -> None:
     logger.info(f"Archiving { test_id }")
     data_dir = config.getOutputDir()
-    with tarfile.open(f"{ data_dir }/{ test_id }.tar.gz", "w:gz") as tar:
+    archive_path = f"{ data_dir }/{ test_id }.tar.gz"
+    
+    # Check if we've done this before
+    if os.path.exists(archive_path):
+        logger.warn(f"File { archive_path } already exists! Skipping...")
+        return
+    
+    # Create archive
+    with tarfile.open(archive_path, "w:gz") as tar:
         logger.debug(f"Writing final output")
-        tar.add(f"{ data_dir }/{ test_id }.json", f"{ test_id }.json")
+        tar.add(f"{ data_dir }/{ test_id }.json", "output.json")
 
         logger.debug(f"Writing logs")
-        tar.add(f"{ data_dir }/{ test_id }.log", f"{ test_id }.log")
-        tar.add(f"{ data_dir }/{ test_id }-daq-client.log", f"{ test_id }-daq-client.log")
+        tar.add(f"{ data_dir }/{ test_id }.log", "output.log")
+        tar.add(f"{ data_dir }/{ test_id }-daq-client.log", "daq-client.log")
 
         for file in os.listdir(f"{ data_dir }/{ test_id }"):
             logger.debug(f"Writing { file }")
-            tar.add(f"{ data_dir }/{ test_id }/{ file }", file, filter_no_logs)
+            tar.add(f"{ data_dir }/{ test_id }/{ file }", file, filter=filter_no_logs)
     
     if delete_uncompressed:
         logger.info("Removing uncompressed data")
@@ -158,7 +166,7 @@ if __name__ == "__main__":
 
         # Save to xml
         file_to_elements(data_set, test_id, board_id)
-        archive_test(test_id, False)
+        archive_test(test_id, True)
 
     # Write output xml
     logger.info(f"Writing output data to { data_dir }/output.xml")
