@@ -10,7 +10,7 @@ class Formatter(logging.Formatter):
     red = "\x1b[31m"
     bold_red = "\x1b[1;31m"
     reset = "\x1b[0m"
-    format = "%(asctime)s - %(name)-20s - %(levelname)-7s - %(message)s (%(filename)s:%(lineno)d)"
+    format = "%(asctime)s - %(name)-24s - %(levelname)-7s - %(message)s (%(filename)s:%(lineno)d)"
 
     FORMATS = {
         logging.DEBUG: logging.Formatter(grey + format + reset),
