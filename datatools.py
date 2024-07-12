@@ -5,9 +5,11 @@ import json
 import os
 import shutil
 import tarfile
+import logging
 import xml.etree.ElementTree as ET
 
-data_dir = "./data"
+from config import config
+logger = logging.getLogger("datatools")
 
 # XML Utilities
 def add_subelements(element: ET.Element, subelements: dict[str: str]) -> ET.Element:
@@ -23,6 +25,7 @@ def add_subelement(element: ET.Element, name: str, value: str) -> ET.Element:
 # Convert a test to xml components for dbuploader
 # Uses format provided by CERN
 def file_to_elements(data_set: ET.SubElement, test_id: str, board_id: str) -> None:
+    logger.info(f"Creating XML tags for { test_id }")
     path = f"{ data_dir }/{ test_id }.json"
     with open(path, 'r') as file:
         data = json.loads(file.read())[test_id]
@@ -109,20 +112,29 @@ def filter_no_logs(info: tarfile.TarInfo) -> tarfile.TarInfo:
 # Compresses all test data to a tar.gz
 # This excludes analysis (eg. plots) and only includes raw data
 def archive_test(test_id: str, delete_uncompressed: False) -> None:
+    logger.info(f"Archiving { test_id }")
+    data_dir = config.getOutputDir()
     with tarfile.open(f"{ data_dir }/{ test_id }.tar.gz", "w:gz") as tar:
+        logger.debug(f"Writing final output")
         tar.add(f"{ data_dir }/{ test_id }.json", f"{ test_id }.json")
+
+        logger.debug(f"Writing logs")
         tar.add(f"{ data_dir }/{ test_id }.log", f"{ test_id }.log")
         tar.add(f"{ data_dir }/{ test_id }-daq-client.log", f"{ test_id }-daq-client.log")
+
         for file in os.listdir(f"{ data_dir }/{ test_id }"):
+            logger.debug(f"Writing { file }")
             tar.add(f"{ data_dir }/{ test_id }/{ file }", file, filter_no_logs)
     
     if delete_uncompressed:
+        logger.info("Removing uncompressed data")
         shutil.rmtree(f"{ data_dir }/{ test_id }")
         os.remove(f"{ data_dir }/{ test_id }.json")
         os.remove(f"{ data_dir }/{ test_id }.log")
         os.remove(f"{ data_dir }/{ test_id }-daq-client.log")
 
 if __name__ == "__main__":
+    # Create root elements
     data_set = ET.Element("DATA_SET")
     comment_description = ET.SubElement(data_set, "COMMENT_DESCRIPTION")
     comment_description.text = "Upload functional tests data"
@@ -130,16 +142,28 @@ if __name__ == "__main__":
     version = ET.SubElement(data_set, "VERSION")
     version.text = str(1)
 
+    # Start processing data
+    data_dir = config.getOutputDir()
+    logger.info(f"Loading tests from { data_dir }")
+
     for file in os.listdir(data_dir):
         if not file.endswith(".json"):
             continue
         
+        # Get info
         test_id = file.replace(data_dir, "").replace(".json", "")
         board_id = test_id.split("-")[0]
 
+        logger.info(f"Processing board { board_id } under test { test_id }")
+
+        # Save to xml
         file_to_elements(data_set, test_id, board_id)
         archive_test(test_id, False)
 
+    # Write output xml
+    logger.info(f"Writing output data to { data_dir }/output.xml")
     tree = ET.ElementTree(data_set)
     ET.indent(tree, space="\t", level=0)
     tree.write(f"{ data_dir }/output.xml")
+    
+    logger.info("Exiting.")
