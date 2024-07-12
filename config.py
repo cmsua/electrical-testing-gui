@@ -55,7 +55,7 @@ class Config:
 
         # Add Daq Client Ports
         controllers = self.getHexacontrollers()
-        daq_client_port_start = int(self.config["General"].get("daqclientportstart"))
+        daq_client_port_start = int(self.config["General"].get("DaqClientPortStart"))
         for i in range(len(controllers)):
             self.config.set(controllers[i], "DaqClientPort", str(daq_client_port_start + i))
 

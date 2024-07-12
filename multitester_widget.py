@@ -37,8 +37,6 @@ class TestingArea(QWidget):
         self.textAreas = {}
         self.imageLabels = {}
         for controller in hexacontrollers:
-            tabLayout = QHBoxLayout()
-
             # Create Image
             label = QLabel("Plot will go here.")
             label.setMaximumWidth(1536)
