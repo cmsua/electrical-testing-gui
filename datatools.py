@@ -3,10 +3,13 @@
 
 import json
 import os
+import shutil
+import tarfile
 import xml.etree.ElementTree as ET
 
 data_dir = "./data"
 
+# XML Utilities
 def add_subelements(element: ET.Element, subelements: dict[str: str]) -> ET.Element:
     for key in subelements:
         add_subelement(element, key, subelements[key])
@@ -17,15 +20,17 @@ def add_subelement(element: ET.Element, name: str, value: str) -> ET.Element:
     subelement.text = value
     return subelement
 
-def file_to_elements(data_set, board: str) -> None:
-    path = f"{data_dir}/{board}.json"
+# Convert a test to xml components for dbuploader
+# Uses format provided by CERN
+def file_to_elements(data_set: ET.SubElement, test_id: str, board_id: str) -> None:
+    path = f"{ data_dir }/{ test_id }.json"
     with open(path, 'r') as file:
-        data = json.loads(file.read())[board]
+        data = json.loads(file.read())[test_id]
 
         part = ET.SubElement(data_set, "PART", { "mode": "auto"})
         add_subelements(part, {
             "SERIAL_NUMBER": "TODO",
-            "BARCODE": board,
+            "BARCODE": board_id,
             "KIND_OF_PART": "Hexaboard HD Full"
         })
 
@@ -95,6 +100,28 @@ def file_to_elements(data_set, board: str) -> None:
 
         return (part, data_tag)
 
+# Compression Util
+def filter_no_logs(info: tarfile.TarInfo) -> tarfile.TarInfo:
+    if info.name.endswith(".raw") or info.name.endswith(".log") or info.name.endswith(".png"):
+        return None
+    return info
+
+# Compresses all test data to a tar.gz
+# This excludes analysis (eg. plots) and only includes raw data
+def archive_test(test_id: str, delete_uncompressed: False) -> None:
+    with tarfile.open(f"{ data_dir }/{ test_id }.tar.gz", "w:gz") as tar:
+        tar.add(f"{ data_dir }/{ test_id }.json", f"{ test_id }.json")
+        tar.add(f"{ data_dir }/{ test_id }.log", f"{ test_id }.log")
+        tar.add(f"{ data_dir }/{ test_id }-daq-client.log", f"{ test_id }-daq-client.log")
+        for file in os.listdir(f"{ data_dir }/{ test_id }"):
+            tar.add(f"{ data_dir }/{ test_id }/{ file }", file, filter_no_logs)
+    
+    if delete_uncompressed:
+        shutil.rmtree(f"{ data_dir }/{ test_id }")
+        os.remove(f"{ data_dir }/{ test_id }.json")
+        os.remove(f"{ data_dir }/{ test_id }.log")
+        os.remove(f"{ data_dir }/{ test_id }-daq-client.log")
+
 if __name__ == "__main__":
     data_set = ET.Element("DATA_SET")
     comment_description = ET.SubElement(data_set, "COMMENT_DESCRIPTION")
@@ -106,8 +133,12 @@ if __name__ == "__main__":
     for file in os.listdir(data_dir):
         if not file.endswith(".json"):
             continue
+        
+        test_id = file.replace(data_dir, "").replace(".json", "")
+        board_id = test_id.split("-")[0]
 
-        file_to_elements(data_set, file.replace(data_dir, "").replace(".json", ""))
+        file_to_elements(data_set, test_id, board_id)
+        archive_test(test_id, False)
 
     tree = ET.ElementTree(data_set)
     ET.indent(tree, space="\t", level=0)
