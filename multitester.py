@@ -52,6 +52,7 @@ def setup_test(id, board, hgroc0, hgroc1, hgroc2, timestamp) -> None:
 class TestThread(QThread):
     # Line Out Signal
     line = pyqtSignal(str)
+    exit = pyqtSignal(int)
 
     def __init__(self, id, name, timestamp):
         super().__init__()
@@ -93,13 +94,24 @@ class TestThread(QThread):
             testLog.write(line)
             self.line.emit(converter.convert(line))
 
-        logger.info("Tests Finished, Killing Daq Client")
+        # Exit, get return code
+        returncode = proc.poll()
+        if returncode == None:
+            logger.error("Test script not finished, killing! This should be an impossible state!")
+            proc.kill()
+            returncode = 1
+
+        # Log exit, kill daq client
+        logger.info(f"Tests finished with exit code {returncode}, Killing Daq Client")
         daqClient.kill()
 
         daqClientLog.close()
         testLog.close()
 
-        # Power On Board
+        # Power Off Board
         logger.debug("Powering Off Hexaboard")
         power_status = requests.put(command_url, json={ "name": "pwr_off" })
         logger.debug(f"Hexaboard is unpowered with status { power_status }")
+
+        # Emit Exit Code
+        self.exit.emit(returncode)

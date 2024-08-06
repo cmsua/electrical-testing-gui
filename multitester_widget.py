@@ -7,13 +7,16 @@ from config import config
 
 import multitester
 
-import os, logging, re
+import os
+import logging
+import re
 from datetime import datetime
 from functools import partial
 
 from ansi2html import Ansi2HTMLConverter
 console_color = re.compile(r"\[\d{,3}(;\d{,3}){4}m")
 converter = Ansi2HTMLConverter()
+
 
 class TestingArea(QWidget):
     def __init__(self) -> None:
@@ -55,7 +58,6 @@ class TestingArea(QWidget):
             self.textAreas[controller] = textArea
             logTabs.addTab(textArea, config.getHexacontrollerName(controller))
 
-
             # On line recieve
             def insertLine(controller: str, line: str) -> None:
                 self.textAreas[controller].moveCursor(QTextCursor.MoveOperation.End)
@@ -89,6 +91,7 @@ class TestingArea(QWidget):
         layout.addStretch()
 
         self.setLayout(layout)
+
 
 # A column that asks for all applicable inputs
 class InputColumn(QWidget):
@@ -130,6 +133,11 @@ class InputColumn(QWidget):
         self.button.clicked.connect(self.start_test)
         layout.addRow(self.button)
 
+        # Indicator
+        self.status = QLabel("Tests Not Running")
+        self.status.setStyleSheet("background-color: grey; color: white; border-radius: 5px; padding: 5px")
+        layout.addRow(self.status)
+
         self.setLayout(layout)
 
     def start_test(self) -> None:
@@ -143,7 +151,12 @@ class InputColumn(QWidget):
         self.hgroc1Field.setEnabled(False)
         self.hgroc2Field.setEnabled(False)
 
-        self.button.setText("Test In Progress...")
+        # Set Running Indicator
+        self.status.setText("Tests In Progress")
+        self.status.setStyleSheet("background-color: blue; color: white; border-radius: 5px; padding: 5px")
+
+        # Disable Input
+        self.button.setText("Tests In Progress...")
         self.button.setEnabled(False)
 
         multitester.setup_test(self.id, self.boardField.text(), self.hgroc0Field.text(), self.hgroc1Field.text(), self.hgroc2Field.text(), self.timestamp)
@@ -152,46 +165,64 @@ class InputColumn(QWidget):
         self.clear.emit()
         self.image.emit(None)
         self.test_thread = multitester.TestThread(self.id, self.boardField.text(), self.timestamp)
-        self.test_thread.finished.connect(self.finish_test)
+        self.test_thread.exit.connect(self.finish_test)
         self.test_thread.line.connect(self.new_line)
         self.test_thread.start()
+
 
     # Called each time the test script prints a new line
     def new_line(self, line: str) -> None:
         self.line.emit(line)
         
     # Re-Enable Tests after finished
-    def finish_test(self) -> None:
+    def finish_test(self, exit_code: int) -> None:
+        # Re-enable inputs, clear inputs
         self.boardField.setEnabled(True)
-        self.hgroc0Field.setEnabled(True)
-        self.hgroc1Field.setEnabled(True)
-        self.hgroc2Field.setEnabled(True)
+        self.boardField.clear()
 
+        self.hgroc0Field.setEnabled(True)
+        self.hgroc0Field.clear()
+
+        self.hgroc1Field.setEnabled(True)
+        self.hgroc1Field.clear()
+
+        self.hgroc2Field.setEnabled(True)
+        self.hgroc2Field.clear()
+
+        # Re-enable start button
         self.button.setText("Start Test")
         self.button.setEnabled(True)
 
+        # Set status based on exit code
+        if exit_code == 0:
+            self.status.setText("Tests Passsed")
+            self.status.setStyleSheet("background-color: green; color: white; border-radius: 5px; padding: 5px")
+        else:
+            self.status.setText(f"Tests Failed (Exit Code {exit_code}), Check Logs")
+            self.status.setStyleSheet("background-color: gold; color: white; border-radius: 5px; padding: 5px")
+
+
         # Emit images
-        pedestal_run_dir = f"{ config.getOutputDir() }/{ self.boardField.text() }-{ self.timestamp }/pedestal_run"
+        pedestal_run_dir = f"{config.getOutputDir()}/{self.boardField.text()}-{self.timestamp}/pedestal_run"
         try:
             # Find latest
             files = os.listdir(pedestal_run_dir)
 
-            times = [ os.stat(f"{ pedestal_run_dir }/{ file }").st_mtime for file in files ]
+            times = [os.stat(f"{pedestal_run_dir}/{file}").st_mtime for file in files]
             latest = files[max(range(len(times)), key=times.__getitem__)]
 
             # Load pixmaps
             images = [
-                QPixmap(f"{ pedestal_run_dir }/{ latest }/noise_vs_channel_chip0.png"),
-                QPixmap(f"{ pedestal_run_dir }/{ latest }/noise_vs_channel_chip1.png"),
-                QPixmap(f"{ pedestal_run_dir }/{ latest }/noise_vs_channel_chip2.png")
+                QPixmap(f"{pedestal_run_dir}/{latest}/noise_vs_channel_chip0.png"),
+                QPixmap(f"{pedestal_run_dir}/{latest}/noise_vs_channel_chip1.png"),
+                QPixmap(f"{pedestal_run_dir}/{latest}/noise_vs_channel_chip2.png")
             ]
 
             # Stitch together
-            stitched = QPixmap(sum([ image.width() for image in images ]), max([ image.height() for image in images ]))
+            stitched = QPixmap(sum([image.width() for image in images]), max([image.height() for image in images]))
             painter = QPainter(stitched)
             painter.setBackground(0)
             painter.setPen(0)
-            painter.drawRect(0,0,100,100)
             x_pos = 0
             for image in images:
                 painter.drawPixmap(x_pos, 0, image.width(), image.height(), image)
@@ -200,6 +231,5 @@ class InputColumn(QWidget):
             # Exit
             painter.end()
             self.image.emit(stitched)
-
         except Exception as e:
             print(e)
