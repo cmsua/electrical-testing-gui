@@ -199,7 +199,7 @@ class InputColumn(QWidget):
             self.status.setStyleSheet("background-color: green; color: white; border-radius: 5px; padding: 5px")
         else:
             self.status.setText(f"Tests Failed (Exit Code {exit_code}), Check Logs")
-            self.status.setStyleSheet("background-color: gold; color: white; border-radius: 5px; padding: 5px")
+            self.status.setStyleSheet("background-color: red; color: white; border-radius: 5px; padding: 5px")
 
 
         # Emit images
