@@ -40,7 +40,9 @@ class Config:
             "HexactrlScript": "/opt/hexactrl-script",
             "HexactrlSoftware": "/opt/hexactrl/ROCv3",
             "OutputDir": "./data",
-            "TestConfigTemplate": "./test_config_template.yaml"
+            "TestConfigTemplate": "./test_config_template.yaml",
+            "PowerSupplyAddress": "TCPIP::10.116.24.138",
+            "KriaAddress": "10.116.24.233"
         }
         
         # Read Config, Save
@@ -77,5 +79,16 @@ class Config:
     
     def get_test_config_template_path(self) -> str:
         return path.abspath(self.config["AssembledBoards"].get("TestConfigTemplate"))
+    
+    def get_power_supply_address(self) -> str:
+        return self.config["AssembledBoards"].get("PowerSupplyAddress")
+    
+    # Kria Settings
+    def get_kria_ip(self) -> str:
+        return self.config["AssembledBoards"].get("KriaAddress")
+    
+    def get_kria_web_address(self) -> str:
+        print(self.get_kria_ip())
+        return f"http://{self.get_kria_ip()}:8080"
     
 config = Config("config.ini")

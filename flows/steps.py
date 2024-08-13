@@ -1,33 +1,8 @@
-from abc import ABC, abstractmethod
+from PyQt6.QtCore import QThread
+from PyQt6.QtWidgets import QFormLayout, QVBoxLayout, QLabel, QPushButton, QComboBox
 
-from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtWidgets import QWidget, QFormLayout, QVBoxLayout, QLabel, QPushButton, QComboBox
+from flows.objects import TestStep, TestWidget
 
-# The list of all outputs from previous tests to date
-class TestRollingOptions(ABC):
-    pass
-
-
-# A widget representing one step of a test
-class TestWidget(QWidget):
-    finished = pyqtSignal(str)
-
-# Base class for a test step
-class TestStep(ABC):
-    @abstractmethod
-    def __init__(self, name: str) -> None:
-        self._name = name
-    
-    def get_name(self) -> str:
-        return self._name
-    
-    def get_outputs(self) -> int:
-        return 1
-
-    @abstractmethod
-    def create_widget(self, options: TestRollingOptions) -> TestWidget:
-        pass
-    
 
 # A step that shows a message and asks for confirmation
 class VerifyStep(TestStep):
@@ -37,7 +12,7 @@ class VerifyStep(TestStep):
         super().__init__(name)
         self._message = message
 
-    def create_widget(self, options: TestRollingOptions) -> TestWidget:
+    def create_widget(self, data: object) -> TestWidget:
         widget = TestWidget()
         layout = QVBoxLayout()
         
@@ -63,7 +38,7 @@ class SelectStep(TestStep):
         self._message = message
         self._options = options
 
-    def create_widget(self, options: TestRollingOptions) -> TestWidget:
+    def create_widget(self, data: object) -> TestWidget:
         widget = TestWidget()
         layout = QFormLayout()
         
@@ -80,5 +55,40 @@ class SelectStep(TestStep):
         layout.addRow(selector, button)
 
         # Wrapup
+        widget.setLayout(layout)
+        return widget
+    
+
+# A test step that runs a thread in the background, without console output
+# The step is done when the thread is finished. No value is returned
+# from the thread
+class ThreadStep(TestStep):
+    
+    # Message is the message shown to the user
+    def __init__(self, name: str, message: str, thread: QThread) -> None:
+        super().__init__(name)
+        self._message = message
+        self._thread = thread
+
+    def create_widget(self, data: object) -> TestWidget:
+        widget = TestWidget()
+        layout = QVBoxLayout()
+
+        label = QLabel(self._message)
+        layout.addWidget(label)
+        layout.addStretch()
+
+        self.button = QPushButton("Task Not Finished. Please Wait.")
+        self.button.clicked.connect(lambda: widget.finished.emit("Pressed"))
+        self.button.setEnabled(False)
+        layout.addWidget(self.button)
+
+        def connected() -> None:
+            self.button.setText("Continue...")
+            self.button.setEnabled(True)
+
+        self._thread.finished.connect(connected)
+        self._thread.start()
+
         widget.setLayout(layout)
         return widget

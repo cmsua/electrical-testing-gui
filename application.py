@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
         self.showFullScreen()
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle('dark')
