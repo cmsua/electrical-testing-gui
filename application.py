@@ -1,7 +1,9 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel
 
-from status_widget import StatusBox
-from multitester_widget import TestingArea
+from config import config
+from test_area import TestArea
+from flows.assembled.flow import AssembledHexaboardFlow
+
 import sys
 
 class MainWindow(QMainWindow):
@@ -11,21 +13,28 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Hexaboard Electrical Testing")
         layout = QVBoxLayout()
 
-        # Add Header
-        header = QLabel("Hexaboard Electrical Testing GUI")
+        # Create Header
+        # Add Title to header
+        header = QLabel("Hexaboard Testing GUI")
         font = header.font()
-        font.setPointSize(font.pointSize() * 2)
+        font.setPointSize(font.pointSize() * 3)
+        font.setBold(True)
         header.setFont(font)
-
         layout.addWidget(header)
-        layout.addWidget(TestingArea())
 
-        # Status Box
-        self.status_box = StatusBox()
-        layout.addWidget(self.status_box)
+        # Add Institution Name
+        header = QLabel(config.get_institution())
+        font = header.font()
+        font.setPointSize(int(font.pointSize() * 2))
+        font.setBold(True)
+        header.setFont(font)
+        layout.addWidget(header)
 
+        # Add Testing Area
+        layout.addWidget(TestArea(AssembledHexaboardFlow()))
         layout.addStretch()
 
+        # Finalization
         widget = QWidget()
         widget.setLayout(layout)
 

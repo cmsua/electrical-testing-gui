@@ -30,34 +30,24 @@ class Config:
 
         # Defaults
         self.config["General"] = {
-            "HexactrlScript": "",
-            "HexactrlSoftware": "",
+            "Institution": "The University of Alabama",
+            "Users": "Nathan N; Not Nathan N",
+            "LogLevel": "DEBUG"
+        }
+        
+        # Test Info
+        self.config["AssembledBoards"] = {
+            "HexactrlScript": "/opt/hexactrl-script",
+            "HexactrlSoftware": "/opt/hexactrl/ROCv3",
             "OutputDir": "./data",
-            "TestConfigs": "./configs",
-            "TestConfigTemplate": "./test_config_template.yaml",
-            "Database": "postgresql://username:password@hostname/database",
-            "LogLevel": "Info",
-            "DaqClientPortStart": 7000
+            "TestConfigTemplate": "./test_config_template.yaml"
         }
-
-        self.config["Hexacontroller.Default"] = {
-            "Name": "Unnamed",
-            "ZynqPort": 8080,
-            "DaqServerPort": 6000,
-            "I2CServerPort": 5555,
-            "SSHPort": 22
-        }
-
+        
         # Read Config, Save
         self.config.read(configFile)
         with open(configFile, 'w') as file:
             self.config.write(file)
 
-        # Add Daq Client Ports
-        controllers = self.getHexacontrollers()
-        daq_client_port_start = int(self.config["General"].get("DaqClientPortStart"))
-        for i in range(len(controllers)):
-            self.config.set(controllers[i], "DaqClientPort", str(daq_client_port_start + i))
 
         # Setup color logging, log level
         ch = logging.StreamHandler()
@@ -68,55 +58,24 @@ class Config:
             handlers=[ch]
         )
 
-    def getHexactrlScriptDir(self) -> str:
-        return path.abspath(self.config["General"].get("HexactrlScript"))
+    # Actual Info
+    def get_institution(self) -> str:
+        return self.config["General"].get("Institution")
     
-    def getHexactrlSoftwareDir(self) -> str:
-        return path.abspath(self.config["General"].get("HexactrlSoftware"))
-    
-    def getOutputDir(self) -> str:
-        return path.abspath(self.config["General"].get("OutputDir"))
+    def get_users(self) -> list[str]:
+        return [user.strip() for user in self.config["General"].get("Users").split(";")]
 
-    def getDatabaseString(self) -> str:
-        return self.config["General"].get("Database")
+    # Assembled Config Info
+    def get_hexactrl_script_dir(self) -> str:
+        return path.abspath(self.config["AssembledBoards"].get("HexactrlScript"))
     
-    def getTestConfigTemplate(self) -> str:
-        return path.abspath(self.config["General"].get("TestConfigTemplate"))
+    def get_hexactrl_software_dir(self) -> str:
+        return path.abspath(self.config["AssembledBoards"].get("HexactrlSoftware"))
     
-    def getTestConfigDir(self) -> str:
-        return path.abspath(self.config["General"].get("TestConfigs"))
+    def get_output_dir(self) -> str:
+        return path.abspath(self.config["AssembledBoards"].get("OutputDir"))
     
-    # List all established hexacontrollers
-    def getHexacontrollers(self) -> str:
-        sections = self.config.sections()
-        sections.remove("General")
-        sections.remove("Hexacontroller.Default")
-        return sections
-    
-    # Internal method
-    def __getHexacontrollerValue(self, controllerId: str, value: str) -> str:
-        return self.config[controllerId].get(value, self.config["Hexacontroller.Default"].get(value))
-
-    def getHexacontrollerName(self, controllerId: str) -> str:
-        return self.__getHexacontrollerValue(controllerId, "Name")
-    
-    # No fallback supported here
-    def getHexacontrollerAddress(self, controllerId: str) -> str:
-        return self.config[controllerId].get("Address")
-    
-    def getHexacontrollerZynqPort(self, controllerId: str) -> str:
-        return self.__getHexacontrollerValue(controllerId, "ZynqPort")
-    
-    def getHexacontrollerDaqServerPort(self, controllerId: str) -> str:
-        return self.__getHexacontrollerValue(controllerId, "DaqServerPort")
-    
-    def getHexacontrollerDaqClientPort(self, controllerId: str) -> str:
-        return self.__getHexacontrollerValue(controllerId, "DaqClientPort")
-    
-    def getHexacontrollerI2CServerPort(self, controllerId: str) -> str:
-        return self.__getHexacontrollerValue(controllerId, "I2CServerPort")
-    
-    def getHexacontrollerSSHPort(self, controllerId: str) -> str:
-        return self.__getHexacontrollerValue(controllerId, "SSHPort")
+    def get_test_config_template_path(self) -> str:
+        return path.abspath(self.config["AssembledBoards"].get("TestConfigTemplate"))
     
 config = Config("config.ini")
