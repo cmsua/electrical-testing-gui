@@ -41,7 +41,7 @@ class EnableKriaThread(QThread):
         self._address = address
 
     def run(self) -> None:
-        requests.put(f"{self._address}/command", timeout=0.05, json={ "name": "pwr_on" })
+        requests.put(f"{self._address}/command", timeout=0.5, json={ "name": "pwr_on" })
 
 
 # Connect to a kria task
@@ -56,7 +56,7 @@ class DisableKriaThread(QThread):
         self._address = address
 
     def run(self) -> None:
-        requests.put(f"{self._address}/command", timeout=0.05, json={ "name": "pwr_off" })
+        requests.put(f"{self._address}/command", timeout=0.5, json={ "name": "pwr_off" })
 
 
 # Connect to a kria task

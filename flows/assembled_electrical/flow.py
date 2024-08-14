@@ -1,8 +1,8 @@
 from flows.steps import VerifyStep, SelectStep
 from flows.objects import TestFlow, TestStage
 
-from flows.assembled.powersupply import *
-from flows.assembled.kria import *
+from flows.assembled_electrical.powersupply import *
+from flows.assembled_electrical.kria import *
 
 from config import config
 
