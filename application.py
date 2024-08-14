@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLa
 
 from config import config
 from test_area import TestArea
-from flows.assembled.flow import AssembledHexaboardFlow
+from flows.assembled_electrical.flow import AssembledHexaboardFlow
 
 import sys
 
