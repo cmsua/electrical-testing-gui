@@ -57,8 +57,8 @@ class AssembledHexaboardFlow(TestFlow):
         ]
 
         self._runtime_steps = [
-            EnableKriaStep("Kria", config.get_kria_web_address(), "Ensure the central LEDs on the Kria have turned blue."),
             EnablePowerSupplyStep("Power Supply", "The power supply should be enabled. Ensure that Channel 1 is powered."),
+            EnableKriaStep("Kria", config.get_kria_web_address(), "Ensure the central LEDs on the Kria have turned blue."),
             VerifyStep("Test", "Test")
         ]
 
