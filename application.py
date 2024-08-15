@@ -6,6 +6,9 @@ from flows.assembled_electrical.flow import AssembledHexaboardFlow
 
 import sys
 
+import logging
+import log_utils
+
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -44,6 +47,8 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    log_utils.setup_logging()
+
     app = QApplication(sys.argv)
     app.setStyle('dark')
 

@@ -4,6 +4,9 @@ from misc_widgets import QLed, QHLine
 from flows.objects import TestFlow, TestStage
 import datetime
 
+import logging
+import log_utils
+
 # This contains all the LEDs
 class StatusWidget(QFrame):
     def __init__(self, flow: TestFlow) -> None:
@@ -64,6 +67,10 @@ class StatusWidget(QFrame):
 class TestArea(QWidget):
     def __init__(self, flow: TestFlow) -> None:
         super().__init__()
+        self.logger = logging.getLogger("testing")
+        self.logger.info("Created Test Area.")
+        self.logger.info(f"Using flow {flow}")
+
         self._flow = flow
         self._status = StatusWidget(flow)
         self._stage = TestStage.SETUP
@@ -80,6 +87,11 @@ class TestArea(QWidget):
 
     # Start a new test!
     def start_new_test(self):
+        # Wipe Logs
+        self.logger.info("Starting New Test. Clearing Logs...")
+        log_utils.logs = []
+        self.logger.info("Starting New Test. Logs Cleared.")
+
         self._stage = TestStage.SETUP
         self._index = 0
         self._test_data = {}
@@ -91,19 +103,23 @@ class TestArea(QWidget):
     # A step finished with data.
     # Process that data, then call the advance step function
     def step_finished(self, data):
+        self.logger.info(f"Stage {self._stage} step ID {self._index} finished.")
         current_step = self._flow.get_steps(self._stage)[self._index]
         
         # Log Data
+        self.logger.debug(f"Step {current_step.get_name()} returned data {data}. Assigning to {current_step.get_data_field()}")
         self._test_data[current_step.get_data_field()] = data
 
         # Update Colors
-        self._status.set_leds(self._stage, self._index, current_step.get_output_status(data))
+        status = current_step.get_output_status(data)
+        self.logger.info(f"Step {current_step.get_name()} returned status {status}")
+        self._status.set_leds(self._stage, self._index, status)
 
         # Save Debug Data
         if self._stage not in self._debug_data:
             self._debug_data[self._stage] = {}
 
-        self._debug_data[current_step.get_name()] = {
+        self._debug_data[self._stage][current_step.get_name()] = {
             "data": data,
             "time_finished": datetime.datetime.now()
         }
@@ -113,6 +129,7 @@ class TestArea(QWidget):
     # A step finished. Advance to the next one.
     # If all tests are finished, start a new test
     def advance_step(self) -> None:
+        self.logger.info(f"Advancing one step, from {self._stage} index {self._index}")
         # Get Current Steps
         current_steps = self._flow.get_steps(self._stage)
         
@@ -138,6 +155,8 @@ class TestArea(QWidget):
     # Call this method whenever self._stage or self._index is updated
     def update_input_area(self) -> None:
         step = self._flow.get_steps(self._stage)[self._index]
+        self.logger.info(f"Loading widget for step {step} from stage {self._stage} at index {self._index}")
+        self.logger.debug(f"Loading widget with test data {self._test_data}")
 
         # Load New Widget
         widget = step.create_widget(self._test_data)
