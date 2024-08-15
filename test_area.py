@@ -1,5 +1,5 @@
-from PyQt6.QtWidgets import QWidget, QFrame, QHBoxLayout, QFormLayout, QLabel
-from misc_widgets import QLed, QHLine
+from PyQt6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
+from misc_widgets import QLed
 
 from flows.objects import TestFlow, TestStage
 import datetime
@@ -12,7 +12,7 @@ class StatusWidget(QFrame):
     def __init__(self, flow: TestFlow) -> None:
         super().__init__()
         self._leds = {}
-        layout = QFormLayout()
+        layout = QVBoxLayout()
 
         # Header
         label = QLabel("Test Flow")
@@ -20,10 +20,15 @@ class StatusWidget(QFrame):
         font.setPointSizeF(font.pointSize() * 1.5)
         label.setFont(font)
 
-        layout.addRow(label)
+        layout.addWidget(label)
         
         # Setup LEDs
+        leds_layout = QHBoxLayout()
+        
+        # One column per stage
         for stage in TestStage:
+            stage_layout = QFormLayout()
+            
             self._leds[stage] = []
             steps = flow.get_steps(stage)
 
@@ -40,9 +45,18 @@ class StatusWidget(QFrame):
                 line_widget = QWidget()
                 line_widget.setLayout(line_layout)
 
-                layout.addRow(QLabel(step.get_name()), line_widget)
+                stage_layout.addRow(QLabel(step.get_name()), line_widget)
+            
+            # Add Stage
+            stage_widget = QWidget()
+            stage_widget.setLayout(stage_layout)
+            leds_layout.addWidget(stage_widget)
 
-            layout.addWidget(QHLine())
+        # Add LEDs
+        leds_widget = QWidget()
+        leds_widget.setLayout(leds_layout)
+        layout.addWidget(leds_widget)
+        layout.addStretch()
 
         # Final Touches
         self.setLayout(layout)

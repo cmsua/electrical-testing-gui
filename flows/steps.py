@@ -1,4 +1,5 @@
-from PyQt6.QtCore import QThread
+from PyQt6.QtCore import Qt, QThread
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFormLayout, QVBoxLayout, QLabel, QPushButton, QComboBox
 
 from flows.objects import TestStep, TestWidget
@@ -8,9 +9,10 @@ from flows.objects import TestStep, TestWidget
 class VerifyStep(TestStep):
     
     # Message is the message shown to the user
-    def __init__(self, name: str, message: str) -> None:
+    def __init__(self, name: str, message: str, image_path: str = None) -> None:
         super().__init__(name)
         self._message = message
+        self._image_path = image_path
 
     def create_widget(self, data: object) -> TestWidget:
         widget = TestWidget()
@@ -18,7 +20,17 @@ class VerifyStep(TestStep):
         
         # Text
         text = QLabel(self._message)
+        text.setWordWrap(True)
         layout.addWidget(text)
+
+        # Image, if present
+        if self._image_path:
+            image = QLabel()
+            image.setPixmap(QPixmap(self._image_path).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio))
+            
+            layout.addWidget(image)
+
+        # Stretch
         layout.addStretch()
 
         # Finished
