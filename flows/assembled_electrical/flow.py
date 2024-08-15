@@ -52,7 +52,7 @@ class AssembledHexaboardFlow(TestFlow):
             VerifyStep(
                 "L3 Loopback",
                 "Connect the L3 Loopback to the hexaboard. The board should not overlap with the trophy. When correctly, the hole in the L3 Loopback chip will be centered on a support pillar below.",
-                "static/assembled_electrical/l3_loopback.png"
+                "static/assembled_electrical/l3_loopback.jpg"
             )
         ]
 
