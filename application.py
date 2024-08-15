@@ -35,7 +35,6 @@ class MainWindow(QMainWindow):
 
         # Add Testing Area
         layout.addWidget(TestArea(AssembledHexaboardFlow()))
-        layout.addStretch()
 
         # Finalization
         widget = QWidget()

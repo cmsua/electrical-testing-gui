@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt, QThread
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QFormLayout, QVBoxLayout, QLabel, QPushButton, QComboBox
+from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton, QComboBox
 
 from flows.objects import TestStep, TestWidget
 
@@ -52,19 +52,24 @@ class SelectStep(TestStep):
 
     def create_widget(self, data: object) -> TestWidget:
         widget = TestWidget()
-        layout = QFormLayout()
+        layout = QVBoxLayout()
         
-        # Text
+        # Text, Selector
         text = QLabel(self._message)
-        layout.addRow(text)
+        layout.addWidget(text)
 
-        # Dropdown
+        # Selector
         selector = QComboBox()
         selector.addItems(self._options)
+        layout.addWidget(selector)
 
+        # Stretch
+        layout.addStretch()
+
+        # Select Button
         button = QPushButton("Select")
         button.clicked.connect(lambda: widget.finished.emit(selector.currentText()))
-        layout.addRow(selector, button)
+        layout.addWidget(button)
 
         # Wrapup
         widget.setLayout(layout)
