@@ -81,23 +81,47 @@ class StatusWidget(QFrame):
 class TestArea(QWidget):
     def __init__(self, flow: TestFlow) -> None:
         super().__init__()
+        # Logs
         self.logger = logging.getLogger("testing")
         self.logger.info("Created Test Area.")
         self.logger.info(f"Using flow {flow}")
 
+        # Initial Variables
         self._flow = flow
         self._status = StatusWidget(flow)
         self._stage = TestStage.SETUP
         self._index = 0
         self._current_widget = QWidget()
         
-        self.layout = QHBoxLayout()
-        self.layout.addWidget(self._status)
-        self.layout.addWidget(self._current_widget)
-        self.layout.addStretch()
+        # Layout, Status
+        layout = QHBoxLayout()
+        layout.addWidget(self._status)
+
+        # Interactive Area
+        interactive = QFrame()
+        self._interactive_layout = QVBoxLayout()
+
+        # Interactive Area Title
+        label = QLabel("Test Area")
+        font = label.font()
+        font.setPointSizeF(font.pointSize() * 1.5)
+        label.setFont(font)
+        self._interactive_layout.addWidget(label)
+        
+        # Add Generated Widget
+        self._interactive_layout.addWidget(self._current_widget)
+
+        # Finishing Touches
+        interactive.setFrameShape(QFrame.Shape.StyledPanel)
+        interactive.setFrameShadow(QFrame.Shadow.Raised)
+        interactive.setLayout(self._interactive_layout)
+
+        # Add Interactive Area
+        layout.addWidget(interactive)
+        layout.addStretch()
 
         self.start_new_test()
-        self.setLayout(self.layout)
+        self.setLayout(layout)
 
     # Start a new test!
     def start_new_test(self):
@@ -176,7 +200,7 @@ class TestArea(QWidget):
         widget = step.create_widget(self._test_data)
         widget.finished.connect(self.step_finished)
 
-        self.layout.replaceWidget(self._current_widget, widget)
+        self._interactive_layout.replaceWidget(self._current_widget, widget)
         self._current_widget.deleteLater()
         self._current_widget = widget
 
