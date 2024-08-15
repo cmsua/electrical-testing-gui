@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
+from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
 from misc_widgets import QLed
 
 from flows.objects import TestFlow, TestStage
@@ -77,6 +77,38 @@ class StatusWidget(QFrame):
         for i in range(len(step_leds)):
             step_leds[i].setState(colors[i])
 
+# The interaction area, which has a main widget that constantly changes
+class InteractionAreaWidget(QFrame):
+    def __init__(self) -> None:
+        super().__init__()
+
+        # Set Main Widget as a blank
+        self._current_widget = QWidget()
+
+        self._layout = QVBoxLayout()
+
+        # Header
+        label = QLabel("Test Area")
+        font = label.font()
+        font.setPointSizeF(font.pointSize() * 1.5)
+        label.setFont(font)
+        self._layout.addWidget(label)
+        
+        # Add Generated Widget
+        self._layout.addWidget(self._current_widget)
+
+        # Finishing Touches
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setFrameShadow(QFrame.Shadow.Raised)
+        self.setLayout(self._layout)
+
+    # Set the main widget and destroy the old
+    def set_widget(self, widget: QWidget) -> None:
+        self._layout.replaceWidget(self._current_widget, widget)
+        self._current_widget.deleteLater()
+        self._current_widget = widget
+
 # The main test area, which handles everything
 class TestArea(QWidget):
     def __init__(self, flow: TestFlow) -> None:
@@ -91,34 +123,12 @@ class TestArea(QWidget):
         self._status = StatusWidget(flow)
         self._stage = TestStage.SETUP
         self._index = 0
-        self._current_widget = QWidget()
+        self._interaction = InteractionAreaWidget()
         
-        # Layout, Status
+        # Layout, Status, Interaction Area
         layout = QHBoxLayout()
         layout.addWidget(self._status)
-
-        # Interactive Area
-        interactive = QFrame()
-        self._interactive_layout = QVBoxLayout()
-
-        # Interactive Area Title
-        label = QLabel("Test Area")
-        font = label.font()
-        font.setPointSizeF(font.pointSize() * 1.5)
-        label.setFont(font)
-        self._interactive_layout.addWidget(label)
-        
-        # Add Generated Widget
-        self._interactive_layout.addWidget(self._current_widget)
-
-        # Finishing Touches
-        interactive.setFrameShape(QFrame.Shape.StyledPanel)
-        interactive.setFrameShadow(QFrame.Shadow.Raised)
-        interactive.setLayout(self._interactive_layout)
-
-        # Add Interactive Area
-        layout.addWidget(interactive)
-        layout.addStretch()
+        layout.addWidget(self._interaction)
 
         self.start_new_test()
         self.setLayout(layout)
@@ -199,10 +209,7 @@ class TestArea(QWidget):
         # Load New Widget
         widget = step.create_widget(self._test_data)
         widget.finished.connect(self.step_finished)
-
-        self._interactive_layout.replaceWidget(self._current_widget, widget)
-        self._current_widget.deleteLater()
-        self._current_widget = widget
+        self._interaction.set_widget(widget)
 
         # Set Indicators to Orange
         self._status.set_leds(self._stage, self._index, ["yellow" for _ in range(step.get_output_count())])
