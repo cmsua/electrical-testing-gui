@@ -40,8 +40,7 @@ class WaitForPowerSupply(QThread):
 
                 self.supply.emit(ps)
                 return
-            except Exception as e:
-                print(e)
+            except:
                 pass
 
             time.sleep(self._delay)

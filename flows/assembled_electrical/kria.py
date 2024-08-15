@@ -1,12 +1,10 @@
-from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton
+from PyQt6.QtCore import QThread
 
-from flows.objects import TestStep, TestWidget
 from flows.steps import ThreadStep
 
 import time
 import requests
-import os
+import logging
 
 
 # Try and connect to the Kria every X s.
@@ -17,13 +15,19 @@ class ConnectKriaThread(QThread):
         self._delay = delay
 
     def run(self) -> None:
+        logger = logging.getLogger("kria")
         while True:
+            logger.debug(f"Attempting to connect to the kria at {self._address}")
+
             try:
                 response = requests.get(self._address, timeout=0.01)
+                logger.debug(f"Recieved response {response}")
+
                 if response.status_code == 404:
+                    logger.debug(f"Response was successful. Exiting thread.")
                     return
-            except:
-                pass
+            except Exception as e:
+                logger.warn(f"Exception when connecting to kria: {e}")
 
             time.sleep(self._delay)
 
@@ -41,7 +45,11 @@ class EnableKriaThread(QThread):
         self._address = address
 
     def run(self) -> None:
-        requests.put(f"{self._address}/command", timeout=0.5, json={ "name": "pwr_on" })
+        logger = logging.getLogger("kria")
+        logger.debug(f"Attempting to power on the the kria at {self._address}")
+        response = requests.put(f"{self._address}/command", timeout=0.5, json={ "name": "pwr_on" })
+
+        logger.debug(f"Response gotten: {response}")
 
 
 # Connect to a kria task
@@ -56,7 +64,11 @@ class DisableKriaThread(QThread):
         self._address = address
 
     def run(self) -> None:
-        requests.put(f"{self._address}/command", timeout=0.5, json={ "name": "pwr_off" })
+        logger = logging.getLogger("kria")
+        logger.debug(f"Attempting to power off the the kria at {self._address}")
+        response = requests.put(f"{self._address}/command", timeout=0.5, json={ "name": "pwr_off" })
+
+        logger.debug(f"Response gotten: {response}")
 
 
 # Connect to a kria task
