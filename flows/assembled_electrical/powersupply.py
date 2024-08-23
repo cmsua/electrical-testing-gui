@@ -82,8 +82,8 @@ class ConnectPowerSupplyStep(TestStep):
 
 # Connect to a power supply task
 class EnablePowerSupplyStep(VerifyStep):
-    def __init__(self, name: str, message: str) -> None:
-        super().__init__(name, message)
+    def __init__(self, name: str, message: str, verifications: list) -> None:
+        super().__init__(name, message, verifications)
 
     def create_widget(self, data: object) -> TestWidget:
         data["power_supply"].write("OUTPut CH1,ON")
@@ -91,8 +91,8 @@ class EnablePowerSupplyStep(VerifyStep):
     
 # Connect to a power supply task
 class DisablePowerSupplyStep(VerifyStep):
-    def __init__(self, name: str, message: str) -> None:
-        super().__init__(name, message)
+    def __init__(self, name: str, message: str, verifications: list) -> None:
+        super().__init__(name, message, verifications)
 
     def create_widget(self, data: object) -> TestWidget:
         data["power_supply"].write("OUTPut CH1,OFF")
