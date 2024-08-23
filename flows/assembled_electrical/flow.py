@@ -10,7 +10,7 @@ from config import config
 class AssembledHexaboardFlow(TestFlow):
     def __init__(self):
         self._setup_steps = [
-            VerifyStep("ESD", "Ensure you are wearing an ESD strap"),
+            DisplayStep("ESD", "Ensure you are wearing an ESD strap"),
             SelectStep("Select User", "Select User", config.get_users()),
             ConnectKriaStep(
                 "Kria",
