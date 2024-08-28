@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QThread
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QPushButton, QRadioButton, QComboBox
 
@@ -99,7 +99,7 @@ class VerifyStep(TestStep):
             image = QLabel()
             image.setPixmap(QPixmap(self._image_path).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio))
             
-            layout.addWidget(image)
+            content_layout.addWidget(image)
 
         # End Content
         content_widget = QWidget()
@@ -158,10 +158,13 @@ class SelectStep(TestStep):
 class ThreadStep(TestStep):
     
     # Message is the message shown to the user
-    def __init__(self, name: str, message: str, thread: QThread) -> None:
-        super().__init__(name)
+    def __init__(self, name: str, message: str, auto_advance: bool=False, data_field: str=None) -> None:
+        super().__init__(name, data_field)
         self._message = message
-        self._thread = thread
+        self._auto_advance = auto_advance
+
+    def create_thread(self, data) -> QThread:
+        pass
 
     def create_widget(self, data: object) -> TestWidget:
         widget = TestWidget()
@@ -171,17 +174,59 @@ class ThreadStep(TestStep):
         layout.addWidget(label)
         layout.addStretch()
 
+        def advance(message):
+            if self.finished_with_data:
+                widget.finished.emit(self.finished_with_data)
+            else:
+                widget.finished.emit(message)
+
+        # Finish Button
         self.button = QPushButton("Task Not Finished. Please Wait.")
-        self.button.clicked.connect(lambda: widget.finished.emit("Pressed"))
+        self.button.clicked.connect(lambda: advance("Pressed"))
         self.button.setEnabled(False)
         layout.addWidget(self.button)
 
-        def connected() -> None:
-            self.button.setText("Continue...")
-            self.button.setEnabled(True)
+        # When thr thread exits
+        self.finished_with_data = False
+        def finished() -> None:
+            if self._auto_advance:
+                advance("Thread Finished.")
+            else:
+                self.button.setText("Continue...")
+                self.button.setEnabled(True)
 
-        self._thread.finished.connect(connected)
+        # When the thread exits with data, save it
+        def on_data(data) -> None:
+            self.finished_with_data = data
+
+
+        self._thread = self.create_thread(data)
+        self._thread.finished.connect(finished)
+        if hasattr(self._thread, "data"):
+            self._thread.data.connect(on_data)
         self._thread.start()
 
         widget.setLayout(layout)
         return widget
+    
+class DynamicThread(QThread):
+    data = pyqtSignal(object)
+    def __init__(self, method, data):
+        super().__init__()
+        self._method = method
+        self._data = data
+    
+    def run(self):
+        result = self._method(self._data)
+        self.data.emit(result)
+
+# Dynamic Thread Step
+# Used for threads that take actions dependant
+# on data from previous steps
+class DynamicThreadStep(ThreadStep):
+    def __init__(self, name: str, message: str, method, auto_advance: bool=False, data_field: str=None) -> None:
+        super().__init__(name, message, auto_advance, data_field)
+        self._method = method
+
+    def create_thread(self, data):
+        return DynamicThread(self._method, data)

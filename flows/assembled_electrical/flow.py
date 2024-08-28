@@ -1,8 +1,11 @@
-from flows.steps import VerifyStep, SelectStep, DisplayStep
-from flows.objects import TestFlow, TestStage
+from flows.steps import *
+from flows.objects import *
 
 from flows.assembled_electrical.powersupply import *
 from flows.assembled_electrical.kria import *
+from flows.assembled_electrical.tests import *
+
+from functools import partial
 
 from config import config
 
@@ -12,18 +15,18 @@ class AssembledHexaboardFlow(TestFlow):
         self._setup_steps = [
             DisplayStep("ESD", "Ensure you are wearing an ESD strap"),
             SelectStep("Select User", "Select User", config.get_users()),
-            ConnectKriaStep(
+            DynamicThreadStep(
                 "Kria",
-                config.get_kria_web_address(),
-                0.05,
-                "Ensure that the Kria is powered on and connected to the network. This may take a minute or two to load."
+                "Ensure that the Kria is powered on and connected to the network. This may take a minute or two to load.",
+                partial(wait_for_kria, config.get_kria_web_address(), 0.05),
+                True
             ),
-            ConnectPowerSupplyStep(
+            DynamicThreadStep(
                 "Power Supply",
-                "power_supply",
-                config.get_power_supply_address(),
-                0.05,
-                "Ensure that the power supply is on, and reading the following values:\n1.5V, 3.23A, No Channels On"
+                "Ensure that the power supply is on, and reading the following values:\n1.5V, 3.23A, No Channels On",
+                partial(wait_for_power_supply, config.get_power_supply_address(), 0.05),
+                False,
+                "power_supply"
             ),
             DisplayStep(
                 "Hexaboard Present",
@@ -68,14 +71,16 @@ class AssembledHexaboardFlow(TestFlow):
         ]
 
         self._runtime_steps = [
-            EnablePowerSupplyStep("Power Supply", "The power supply should be enabled.", ["Channel 1 is powered", "Channel 2 is unpowered"]),
-            EnableKriaStep("Kria", config.get_kria_web_address(), "Ensure the central LEDs on the Kria have turned blue."),
-            VerifyStep("Test", "Test", ["Tests Done"])
+            DynamicThreadStep("Power Supply", "The power supply should be enabled.", enable_power_supply), # TODO ["Channel 1 is powered", "Channel 2 is unpowered"]
+            DynamicThreadStep("Kria", "Ensure the central LEDs on the Kria have turned blue.", partial(enable_kria, config.get_kria_web_address())),
+            DynamicThreadStep("Load Config", "Loading the board's configuration files...", load_config, True, "board_config"),
+            DynamicThreadStep("Checking Power", "Querying power usage for the board", check_power, True, "power_monitoring"),
+            DynamicThreadStep("Load Firmware", "Loading appropriate firmware for the hexaboard", partial(load_firmware, config.get_kria_web_address()), True)
         ]
 
         self._shutdown_steps = [
-            DisableKriaStep("Kria", config.get_kria_web_address(), "Ensure the central LEDs on the Kria are no longer blue."),
-            DisablePowerSupplyStep("Power Supply", "The power supply should be disabled.", ["Channel 1 is unpowered", "Channel 2 is unpowered"]),
+            DynamicThreadStep("Kria", "Ensure the central LEDs on the Kria are no longer blue.", partial(disable_kria, config.get_kria_web_address())),
+            DynamicThreadStep("Power Supply", "The power supply should be disabled.", disable_power_supply),  # TODO ["Channel 1 is unpowered", "Channel 2 is unpowered"]
             DisplayStep("L3 Loopback", "Remove the L3 Loopback from the hexaboard"),
             DisplayStep("Trophy-Kria", "Disconnect the trophy from the Kria"),
             DisplayStep("Trophy-Hexaboard", "Disconnect the hexaboard from the trophy"),
