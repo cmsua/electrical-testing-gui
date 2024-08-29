@@ -3,12 +3,18 @@ from flows.objects import *
 
 from flows.assembled_electrical.powersupply import *
 from flows.assembled_electrical.kria import *
+from flows.assembled_electrical.redis import *
 from flows.assembled_electrical.tests import *
+from flows.assembled_electrical.cleanup import cleanup
 
 from functools import partial
 
 from config import config
 
+import os
+
+# Required for unpack
+os.environ["PATH"] = os.environ["PATH"] + ":" + os.path.abspath(os.path.join(config.get_hexactrl_software_dir(), "bin"))
 
 class AssembledHexaboardFlow(TestFlow):
     def __init__(self):
@@ -74,8 +80,20 @@ class AssembledHexaboardFlow(TestFlow):
             DynamicThreadStep("Power Supply", "The power supply should be enabled.", enable_power_supply), # TODO ["Channel 1 is powered", "Channel 2 is unpowered"]
             DynamicThreadStep("Kria", "Ensure the central LEDs on the Kria have turned blue.", partial(enable_kria, config.get_kria_web_address())),
             DynamicThreadStep("Load Config", "Loading the board's configuration files...", load_config, True, "board_config"),
-            DynamicThreadStep("Checking Power", "Querying power usage for the board", check_power, True, "power_monitoring"),
-            DynamicThreadStep("Load Firmware", "Loading appropriate firmware for the hexaboard", partial(load_firmware, config.get_kria_web_address()), True)
+            DynamicThreadStep("Load Redis", "Loading Redis Templates...", open_redis, True, "redis"),
+            DynamicThreadStep("Load Firmware", "Loading appropriate firmware for the hexaboard", partial(load_firmware, config.get_kria_web_address()), True),
+            DynamicThreadStep("Restart Services", "Waiting for services to restart...", partial(restart_services, config.get_kria_web_address(), 0.05), True),
+            DynamicThreadStep("Create Sockets", "Creating Sockets. If this hangs, something's gone wrong.", partial(create_sockets, config.get_kria_ip()), True, "sockets"),
+            DynamicThreadStep("Power (Normal)", "Checking Power", check_power_default, True),
+            # TODO Bias Voltage?
+            # TODO I2C Space Check, with fail!
+            DynamicThreadStep("Configure HGCROC", "Configuring the HGCROC...", configure_hgcroc, True),
+            DynamicThreadStep("I2C Checker (2)", "Running the I2C Checker...", partial(i2c_checker_2, config.get_output_dir()), True),
+            DynamicThreadStep("Power (Configured)", "Checking Power", check_power_configured, True),
+            DynamicThreadStep("Initialize Sockets", "Initializing Sockets", initialize_sockets, True),
+            DynamicThreadStep("Pedestal Run (1)", "Pedestal Run", partial(do_pedestal_run, config.get_output_dir()), True),
+            DynamicThreadStep("Scans", "Running Scans", partial(do_scans, config.get_output_dir()), True),
+            DynamicThreadStep("Pedestal Run (2)", "Pedestal Run", partial(do_pedestal_run, config.get_output_dir()), True),
         ]
 
         self._shutdown_steps = [
@@ -86,7 +104,8 @@ class AssembledHexaboardFlow(TestFlow):
             DisplayStep("Trophy-Hexaboard", "Disconnect the hexaboard from the trophy"),
             DisplayStep("Power Cables", "Connect power cables to the hexaboard"),
             DisplayStep("Sticker", "Pretend to place a sticker on the hexaboard"),
-            DisplayStep("Remove Hexaboard", "Remove the hexaboard from the test stand")
+            DisplayStep("Remove Hexaboard", "Remove the hexaboard from the test stand"),
+            DynamicThreadStep("Cleanup", "Archiving + Uploading Data", partial(cleanup, config.get_output_dir()), True),
         ]
 
     def get_steps(self, stage: TestStage) -> list[TestStep]:

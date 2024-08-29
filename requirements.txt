@@ -1,9 +1,10 @@
 ansi2html==1.9.2
-certifi==2024.6.2
 charset-normalizer==3.3.2
-idna==3.7
+matplotlib==3.6.3
+numpy==1.19.5
 PyQt6==6.7.0
 PyQt6-Qt6==6.7.2
 PyQt6-sip==13.6.0
+PyVISA==1.14.1
 requests==2.32.3
-urllib3==2.2.2
+tables==3.8.0

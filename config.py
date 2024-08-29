@@ -17,10 +17,8 @@ class Config:
         
         # Test Info
         self.config["AssembledBoards"] = {
-            "HexactrlScript": "/opt/hexactrl-script",
             "HexactrlSoftware": "/opt/hexactrl/ROCv3",
             "OutputDir": "./data",
-            "TestConfigTemplate": "./test_config_template.yaml",
             "PowerSupplyAddress": "TCPIP::10.116.24.138",
             "KriaAddress": "10.116.24.233"
         }
@@ -43,9 +41,7 @@ class Config:
         return [user.strip() for user in self.config["General"].get("Users").split(";")]
 
     # Assembled Config Info
-    def get_hexactrl_script_dir(self) -> str:
-        return path.abspath(self.config["AssembledBoards"].get("HexactrlScript"))
-    
+    # This is only used for Unpack and nothing else
     def get_hexactrl_software_dir(self) -> str:
         return path.abspath(self.config["AssembledBoards"].get("HexactrlSoftware"))
     
