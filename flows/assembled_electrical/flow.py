@@ -74,7 +74,8 @@ class AssembledHexaboardFlow(TestFlow):
                     "Trophy Oriented Properly",
                     "L3 Loopback Installed Properly"
                 ],
-                "static/assembled_electrical/l3_loopback.jpg"
+                "static/assembled_electrical/l3_loopback.jpg",
+                True
             )
         ]
 

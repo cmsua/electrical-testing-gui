@@ -51,11 +51,14 @@ class DisplayStep(TestStep):
 class VerifyStep(TestStep):
     
     # Message is the message shown to the user
-    def __init__(self, name: str, message: str, verifications: list, image_path: str = None) -> None:
+    # Flag critical if the step should crash the test if
+    # an input is flagged as bad
+    def __init__(self, name: str, message: str, verifications: list, image_path: str = None, critical: bool = False) -> None:
         super().__init__(name)
         self._message = message
         self._image_path = image_path
         self._verifications = verifications
+        self._critical = critical
 
     def create_widget(self, data: object) -> TestWidget:
         widget = TestWidget()
@@ -73,6 +76,7 @@ class VerifyStep(TestStep):
         left_layout.addRow(text)
 
         # Verifications
+        yes_buttons = []
         for verification_text in self._verifications:
             label = QLabel(verification_text)
             
@@ -80,10 +84,12 @@ class VerifyStep(TestStep):
             buttons_layout = QHBoxLayout()
             
             no_button = QRadioButton("No")
+            no_button.setChecked(True)
             buttons_layout.addWidget(no_button)
 
             yes_button = QRadioButton("Yes")
             buttons_layout.addWidget(yes_button)
+            yes_buttons.append(yes_button)
             
             buttons_layout.addStretch()
 
@@ -115,7 +121,11 @@ class VerifyStep(TestStep):
 
         # Finished
         def finish():
-            widget.finished.emit("Manually pressed")
+            result = [button.isChecked() for button in yes_buttons]
+            if self._critical and not all(result):
+                widget.crashed.emit(result)
+            else:
+                widget.finished.emit(result)
             widget.advance.emit("Manually advanced")
 
         button = QPushButton("Next")
@@ -126,6 +136,8 @@ class VerifyStep(TestStep):
         widget.setLayout(layout)
         return widget
     
+    def get_output_status(self, data: list[bool]) -> list[str]:
+        return ["green" if all(data) else "yellow"]
 
 # A step that shows a dropdown with options and asks for one
 class SelectStep(TestStep):
