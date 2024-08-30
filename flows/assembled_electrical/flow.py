@@ -108,7 +108,7 @@ class AssembledHexaboardFlow(TestFlow):
             DisplayStep("Power Cables", "Connect power cables to the hexaboard"),
             DisplayStep("Sticker", "Pretend to place a sticker on the hexaboard"),
             DisplayStep("Remove Hexaboard", "Remove the hexaboard from the test stand"),
-            DynamicThreadStep("Cleanup", "Archiving + Uploading Data", partial(cleanup, config.get_output_dir()), True),
+            DynamicThreadStep("Cleanup", "Archiving + Uploading Data", partial(cleanup, config.get_output_dir()), False),
         ]
 
     def get_steps(self, stage: TestStage) -> list[TestStep]:
