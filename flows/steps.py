@@ -34,8 +34,12 @@ class DisplayStep(TestStep):
         layout.addStretch()
 
         # Finished
+        def finish():
+            widget.finished.emit("Manually pressed")
+            widget.advance.emit("Manually advanced")
+
         button = QPushButton("Next")
-        button.clicked.connect(lambda: widget.finished.emit("Pressed"))
+        button.clicked.connect(finish)
         layout.addWidget(button)
 
         # Wrapup
@@ -110,8 +114,12 @@ class VerifyStep(TestStep):
         layout.addStretch()
 
         # Finished
+        def finish():
+            widget.finished.emit("Manually pressed")
+            widget.advance.emit("Manually advanced")
+
         button = QPushButton("Next")
-        button.clicked.connect(lambda: widget.finished.emit("Pressed"))
+        button.clicked.connect(finish)
         layout.addWidget(button)
 
         # Wrapup
@@ -143,8 +151,11 @@ class SelectStep(TestStep):
         layout.addStretch()
 
         # Select Button
+        def finish():
+             widget.finished.emit(selector.currentText())
+             widget.advance.emit("Manually advanced")
         button = QPushButton("Select")
-        button.clicked.connect(lambda: widget.finished.emit(selector.currentText()))
+        button.clicked.connect(finish)
         layout.addWidget(button)
 
         # Wrapup
@@ -174,36 +185,35 @@ class ThreadStep(TestStep):
         layout.addWidget(label)
         layout.addStretch()
 
-        def advance(message):
-            if self.finished_with_data:
-                widget.finished.emit(self.finished_with_data)
-            else:
-                widget.finished.emit(message)
-
         # Finish Button
         self.button = QPushButton("Task Not Finished. Please Wait.")
-        self.button.clicked.connect(lambda: advance("Pressed"))
+        self.button.clicked.connect(widget.advance.emit)
         self.button.setEnabled(False)
         layout.addWidget(self.button)
 
         # When thr thread exits
         self.finished_with_data = False
+        self.finished_with_error = False
         def finished() -> None:
-            if self._auto_advance:
-                advance("Thread Finished.")
+            # Crashed, don't allow auto advance and show an error
+            if self.finished_with_error:
+                self.button.setText("ERROR: Click to continue...")
+                self.button.setEnabled(True)
+            elif self._auto_advance:
+                widget.advance.emit("Automatically advanced on thread finish")
             else:
                 self.button.setText("Continue...")
                 self.button.setEnabled(True)
 
         # When the thread exits with data, save it
-        def on_data(data) -> None:
-            self.finished_with_data = data
-
-
         self._thread = self.create_thread(data)
         self._thread.finished.connect(finished)
         if hasattr(self._thread, "data"):
-            self._thread.data.connect(on_data)
+            self._thread.data.connect(widget.finished.emit)
+
+        if hasattr(self._thread, "crash"):
+            self._thread.crash.connect(widget.crashed.emit)
+
         self._thread.start()
 
         widget.setLayout(layout)
@@ -211,14 +221,18 @@ class ThreadStep(TestStep):
     
 class DynamicThread(QThread):
     data = pyqtSignal(object)
+    crash = pyqtSignal(object)
     def __init__(self, method, data):
         super().__init__()
         self._method = method
         self._data = data
     
     def run(self):
-        result = self._method(self._data)
-        self.data.emit(result)
+        try:
+            result = self._method(self._data)
+            self.data.emit(result)
+        except Exception as e:
+            self.crash.emit(e)
 
 # Dynamic Thread Step
 # Used for threads that take actions dependant

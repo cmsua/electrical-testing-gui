@@ -6,8 +6,11 @@ from enum import Enum
 
 # A widget representing one step of a test
 class TestWidget(QWidget):
+    # The test widget is presumed read-only after emitting finished or crashed
+    # It will remain rendered until advance is passed
     finished = pyqtSignal(object)
-
+    crashed = pyqtSignal(object)
+    advance = pyqtSignal(object)
 
 # Base class for a test step
 class TestStep(ABC):

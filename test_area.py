@@ -145,8 +145,54 @@ class TestArea(QWidget):
         self._test_data = {}
         self._debug_data = {}
         
-        self._status.set_all_leds("blue")
-        self.update_input_area()
+        self._status.set_all_leds("grey")
+        self.update_input_area("Starting New Test")
+
+    # A step crashed with an error
+    # Process that, skip to cleanup
+    def step_crashed(self, error):
+        self.logger.critical(f"Stage {self._stage} step ID {self._index} crashed with error {error}")
+        current_step = self._flow.get_steps(self._stage)[self._index]
+
+        # Save Debug Data
+        if self._stage not in self._debug_data:
+            self._debug_data[self._stage] = {}
+
+        self._debug_data[self._stage][current_step.get_name()] = {
+            "error": error,
+            "time_finished": datetime.datetime.now()
+        }
+
+        # Set the rest of this and possibly the next stage's leds
+        if self._stage == TestStage.SETUP:
+            # How?
+            self.logger.critical("Errored in setup - how???")
+            steps = self._flow.get_steps(self._stage)
+            for index in range(self._index, len(steps)):
+                self._status.set_leds(self._stage, index, ["red" for _ in range(steps[index].get_output_count())])
+                                      
+            steps = self._flow.get_steps(TestStage.RUNTIME)
+            for index in range(len(steps)):
+                self._status.set_leds(TestStage.RUNTIME, index, ["red" for _ in range(steps[index].get_output_count())])
+        elif self._stage == TestStage.RUNTIME:
+            steps = self._flow.get_steps(self._stage)
+            for index in range(self._index, len(steps)):
+                self._status.set_leds(self._stage, index, ["red" for _ in range(steps[index].get_output_count())])
+
+        elif self._stage == TestStage.SHUTDOWN:
+            # How???
+            self.logger.critical("Errored in shutdown - how???")
+
+            # Just give up
+            self.start_new_test()
+
+            # Return as to not skip to shutdown, which would be backwards
+            return
+        
+        # Skip to Cleanup
+        self.logger.warn("Skipping to Shutdown")
+        self._stage = TestStage.SHUTDOWN
+        self._index = 0
 
     # A step finished with data.
     # Process that data, then call the advance step function
@@ -172,11 +218,11 @@ class TestArea(QWidget):
             "time_finished": datetime.datetime.now()
         }
 
-        self.advance_step()
+        self.advance_one_step()
 
     # A step finished. Advance to the next one.
     # If all tests are finished, start a new test
-    def advance_step(self) -> None:
+    def advance_one_step(self) -> None:
         self.logger.info(f"Advancing one step, from {self._stage} index {self._index}")
         # Get Current Steps
         current_steps = self._flow.get_steps(self._stage)
@@ -197,11 +243,11 @@ class TestArea(QWidget):
         # Otherwise, just advance the index
         else:
             self._index = self._index + 1
-        
-        self.update_input_area()
 
     # Call this method whenever self._stage or self._index is updated
-    def update_input_area(self) -> None:
+    def update_input_area(self, reason: str) -> None:
+        self.logger.info(f"Updating input with reason {reason}")
+
         step = self._flow.get_steps(self._stage)[self._index]
         self.logger.info(f"Loading widget for step {step} from stage {self._stage} at index {self._index}")
         self.logger.debug(f"Loading widget with test data {self._test_data}")
@@ -209,7 +255,9 @@ class TestArea(QWidget):
         # Load New Widget
         widget = step.create_widget(self._test_data)
         widget.finished.connect(self.step_finished)
+        widget.crashed.connect(self.step_crashed)
+        widget.advance.connect(self.update_input_area)
         self._interaction.set_widget(widget)
 
-        # Set Indicators to Orange
-        self._status.set_leds(self._stage, self._index, ["yellow" for _ in range(step.get_output_count())])
+        # Set Indicators to Blue
+        self._status.set_leds(self._stage, self._index, ["cyan" for _ in range(step.get_output_count())])
