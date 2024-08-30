@@ -133,6 +133,8 @@ class TestArea(QWidget):
         self.start_new_test()
         self.setLayout(layout)
 
+        self.update_input_area("Starting Over")
+
     # Start a new test!
     def start_new_test(self):
         # Wipe Logs
@@ -144,9 +146,6 @@ class TestArea(QWidget):
         self._index = 0
         self._test_data = {}
         self._debug_data = {}
-        
-        self._status.set_all_leds("grey")
-        self.update_input_area("Starting New Test")
 
     # A step crashed with an error
     # Process that, skip to cleanup
@@ -247,6 +246,10 @@ class TestArea(QWidget):
     # Call this method whenever self._stage or self._index is updated
     def update_input_area(self, reason: str) -> None:
         self.logger.info(f"Updating input with reason {reason}")
+
+        if self._stage == TestStage.SETUP and self._index == 0:
+            self.logger.info("Clearing LEDs as starting from first stage!")
+            self._status.set_all_leds("grey")
 
         step = self._flow.get_steps(self._stage)[self._index]
         self.logger.info(f"Loading widget for step {step} from stage {self._stage} at index {self._index}")

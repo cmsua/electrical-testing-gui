@@ -50,6 +50,10 @@ def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, redis_
 
 # Full Cleanup of all tests
 def cleanup(out_dir: str, data: object) -> None:
+    if "board_config" not in data:
+        logger.critical("Didn't get far enough to load configs, so no data to archive!")
+        return
+    
     dut = data["board_config"]["config"]["dut"]
     logger.debug(f"Using dut {dut}")
 
