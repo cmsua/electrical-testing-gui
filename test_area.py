@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
 from misc_widgets import QLed
 
-from flows.objects import TestFlow, TestStage
+from objects import TestFlow, TestStage
 import datetime
 
 import logging
