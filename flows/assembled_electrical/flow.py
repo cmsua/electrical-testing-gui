@@ -164,28 +164,28 @@ class AssembledHexaboardFlow(TestFlow):
                 "Initializing Sockets",
                 initialize_sockets,
                 True,
-                timeout=1
+                timeout=120
             ),
             DynamicThreadStep(
                 "Pedestal Run (1)",
                 "Pedestal Run",
                 partial(do_pedestal_run, config.get_output_dir()),
                 True,
-                timeout=5
+                timeout=60
             ),
             DynamicThreadStep(
                 "Scans",
                 "Running Scans",
                 partial(do_scans, config.get_output_dir()),
                 True,
-                timeout=5
+                timeout=180
             ),
             DynamicThreadStep(
                 "Pedestal Run (2)",
                 "Pedestal Run",
                 partial(do_pedestal_run, config.get_output_dir()),
                 True,
-                timeout=5
+                timeout=60
             ),
         ]
 
