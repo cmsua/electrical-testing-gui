@@ -1,4 +1,4 @@
-from steps.input_steps import DisplayStep, VerifyStep, SelectStep
+from steps.input_steps import DisplayStep, VerifyStep, SelectStep, TextAreaStep
 from steps.thread_steps import DynamicThreadStep
 
 from objects import TestFlow, TestStage, TestStep
@@ -76,7 +76,8 @@ class AssembledHexaboardFlow(TestFlow):
                 ],
                 "static/assembled_electrical/l3_loopback.jpg",
                 True
-            )
+            ),
+            TextAreaStep("Comments", "Enter Pre-Test Comments")
         ]
 
         self._runtime_steps = [
@@ -187,6 +188,7 @@ class AssembledHexaboardFlow(TestFlow):
                 True,
                 timeout=60
             ),
+            TextAreaStep("Comments", "Enter Post-Test Comments")
         ]
 
         self._shutdown_steps = [
