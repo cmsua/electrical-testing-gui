@@ -198,15 +198,15 @@ class TestArea(QWidget):
     def step_finished(self, data):
         self.logger.info(f"Stage {self._stage} step ID {self._index} finished.")
         current_step = self._flow.get_steps(self._stage)[self._index]
-        
+
+        # Update Colors
+        status = current_step.get_output_status(self._test_data, data)
+        self.logger.info(f"Step {current_step.get_name()} returned status {status}")
+        self._status.set_leds(self._stage, self._index, status)
+
         # Log Data
         self.logger.debug(f"Step {current_step.get_name()} returned data {data}. Assigning to {current_step.get_data_field()}")
         self._test_data[current_step.get_data_field()] = data
-
-        # Update Colors
-        status = current_step.get_output_status(data)
-        self.logger.info(f"Step {current_step.get_name()} returned status {status}")
-        self._status.set_leds(self._stage, self._index, status)
 
         # Save Debug Data
         if self._stage not in self._debug_data:

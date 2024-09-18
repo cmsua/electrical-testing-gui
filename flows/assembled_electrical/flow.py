@@ -167,21 +167,21 @@ class AssembledHexaboardFlow(TestFlow):
                 True,
                 timeout=120
             ),
-            DynamicThreadStep(
+            DynamicThreadStepWithRedisCheck(
                 "Pedestal Run (1)",
                 "Pedestal Run",
                 partial(do_pedestal_run, config.get_output_dir()),
                 True,
                 timeout=60
             ),
-            DynamicThreadStep(
+            DynamicThreadStepWithRedisCheck(
                 "Scans",
                 "Running Scans",
                 partial(do_scans, config.get_output_dir()),
                 True,
                 timeout=180
             ),
-            DynamicThreadStep(
+            DynamicThreadStepWithRedisCheck(
                 "Pedestal Run (2)",
                 "Pedestal Run",
                 partial(do_pedestal_run, config.get_output_dir()),

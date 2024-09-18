@@ -32,7 +32,7 @@ class TestStep(ABC):
     
     # Given data returned by the widget, returns an array with
     # length get_output_count() whose values are colors
-    def get_output_status(self, data) -> list[str]:
+    def get_output_status(self, in_data, out_data) -> list[str]:
         return ["green"]
 
     @abstractmethod
