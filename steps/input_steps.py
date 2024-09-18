@@ -197,7 +197,7 @@ class TextAreaStep(TestStep):
 
         # Select Button
         def finish():
-             widget.finished.emit(text.currentText())
+             widget.finished.emit(text.toMarkdown())
              widget.advance.emit("Manually advanced")
 
         button = QPushButton("Finish")

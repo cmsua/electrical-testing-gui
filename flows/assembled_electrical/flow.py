@@ -144,7 +144,7 @@ class AssembledHexaboardFlow(TestFlow):
                 "Configuring the HGCROC...",
                 configure_hgcroc,
                 True,
-                timeout=1
+                timeout=15
             ),
             DynamicThreadStep(
                 "I2C Checker (2)",
