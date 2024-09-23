@@ -54,7 +54,7 @@ def cleanup(out_dir: str, data: object) -> None:
         logger.critical("Didn't get far enough to load configs, so no data to archive!")
         return
     
-    dut = data["board_config"]["config"]["dut"]
+    dut = data["board_config"]["dut"]
     logger.debug(f"Using dut {dut}")
 
     logger.info("Dumping Redis")

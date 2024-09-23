@@ -6,6 +6,7 @@ from objects import TestFlow, TestStage, TestStep
 from flows.assembled_electrical.powersupply import *
 from flows.assembled_electrical.kria import *
 from flows.assembled_electrical.redis import *
+from flows.assembled_electrical.scanner import *
 from flows.assembled_electrical.tests import *
 from flows.assembled_electrical.cleanup import cleanup
 
@@ -77,7 +78,10 @@ class AssembledHexaboardFlow(TestFlow):
                 "static/assembled_electrical/l3_loopback.jpg",
                 True
             ),
-            TextAreaStep("Comments", "Enter Pre-Test Comments")
+            CentralBarcodeStep("Scan Board Barcode", "Scan the central board barcode text below", "board-barcode"),
+            VerifyBoardStep("Verify Board", "board"),
+            ScanHGCROCs("Scan HGCROCs", "hgcrocs"),
+            TextAreaStep("Comments", "Enter Pre-Test Comments", "pre-comments")
         ]
 
         self._runtime_steps = [
@@ -188,7 +192,7 @@ class AssembledHexaboardFlow(TestFlow):
                 True,
                 timeout=60
             ),
-            TextAreaStep("Comments", "Enter Post-Test Comments")
+            TextAreaStep("Comments", "Enter Post-Test Comments", "post-comments")
         ]
 
         self._shutdown_steps = [

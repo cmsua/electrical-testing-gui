@@ -176,8 +176,8 @@ class SelectStep(TestStep):
     
 # A step that shows a dropdown with options and asks for one
 class TextAreaStep(TestStep):
-    def __init__(self, name: str, message: str) -> None:
-        super().__init__(name)
+    def __init__(self, name: str, message: str, data_field: str = None) -> None:
+        super().__init__(name, data_field)
         self._message = message
 
     def create_widget(self, data: object) -> TestWidget:

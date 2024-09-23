@@ -4,6 +4,7 @@ import os
 import sys
 import io
 import contextlib
+import uuid
 
 from .powersupply import check_power
 from hexactrl_script import zmq_controler as zmqctrl
@@ -20,7 +21,10 @@ logger = logging.getLogger("tests")
 def load_config(data: object) -> object:
     logger.info("Loading Config...")
 
-    file = "hexactrl_script/configs/XLFL_production_test_ua.yaml" # TODO Read From Data
+    if data["board"] == "ld-full":
+        file = "hexactrl_script/configs/XLFL_production_test_ua.yaml" # TODO Read From Data
+    else:
+        raise ValueError(f"Board {data['board']} not implemented!")
     logger.debug(f"Identified config as {file}")
 
     with open(file) as fin:
@@ -29,26 +33,20 @@ def load_config(data: object) -> object:
         test_config = yaml.safe_load(fin)
         logger.debug(f"Read File as {test_config}")
 
-        data = {}
-        for rid, roc in test_config['rocs'].items():
-            data[f'ROC{rid}'] = roc
-
-        logger.debug(f"Loaded ROCs as {data}")
-
-        return {
-            "config": test_config,
-            "rocs": data
-        }
+        # Load Parsed Data
+        test_config['rocs'] = data['hgcrocs']
+        test_config['dut'] = str(uuid.uuid4())
+        return test_config
 
 
 # Not sure what this does
 def create_sockets(address: str, data: object) -> object:
-    config_file = os.path.join("hexactrl_script", data["board_config"]["config"]["daq_and_fe_configuration"])
+    config_file = os.path.join("hexactrl_script", data["board_config"]["daq_and_fe_configuration"])
     logger.debug(f"Identified config as {config_file}")
 
-    i2c_port = data["board_config"]["config"]["i2cPort"]
-    daq_port = data["board_config"]["config"]["daqPort"]
-    puller_port = data["board_config"]["config"]["pullerPort"]
+    i2c_port = data["board_config"]["i2cPort"]
+    daq_port = data["board_config"]["daqPort"]
+    puller_port = data["board_config"]["pullerPort"]
     logger.debug(f"Identified I2C Port {i2c_port}, DAQ Server Port {daq_port}, Puller Port {puller_port}")
     logger.debug(f"Using address {address} for the Kria")
 
@@ -85,23 +83,16 @@ def configure_hgcroc(data: object) -> None:
 # Check the i2c again
 def i2c_checker_2(output_dir: str, data: object) -> None:
     logger.info("2nd I2C check after configuring")
+    # The original script loaded the config again
+    # That's a bit silly - we don't need to do that
+    # Just used the cached version
 
-    config_file = "hexactrl_script/configs/XLFL_production_test.yaml" # TODO Read From Data
-    logger.debug(f"Identified config as {config_file}")
-
-    # Not sure why we're loading this again - 
-    # the data's already at data["board_config"]["config"]
-    # But I'm not questioning CERN
-    with open(config_file) as fin:
-        config = yaml.safe_load(fin)
-        logger.debug(f"Loaded config {config}")
-
-    dut = data["board_config"]["config"]["dut"]
+    dut = data["board_config"]["dut"]
     logger.info(f"Using dut {dut}")
 
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            i2c_checker.i2c_checker(data["sockets"]["i2c"], output_dir, dut, config, logger)
+            i2c_checker.i2c_checker(data["sockets"]["i2c"], output_dir, dut, data["board_config"], logger)
     logger.debug(f"i2c_checker wrote to stdout/stderr: {output.getvalue()}")
 
     redis = data["redis"]
@@ -154,7 +145,7 @@ def initialize_sockets(data: object) -> None:
 def do_pedestal_run(output_dir: str, data: object) -> None:
     logger.info("Doing a pedestal run!")
 
-    dut = data["board_config"]["config"]["dut"]
+    dut = data["board_config"]["dut"]
     logger.debug(f"Using dut {dut}")
     
     # Do pedestal run, wrap stdout/stderr
@@ -174,7 +165,7 @@ def do_pedestal_run(output_dir: str, data: object) -> None:
 def do_scans(output_dir: str, data: object) -> None:
     logger.info("Doing all scans!")
 
-    dut = data["board_config"]["config"]["dut"]
+    dut = data["board_config"]["dut"]
     logger.debug(f"Using dut {dut}")
     
     i2c_socket = data["sockets"]["i2c"]
