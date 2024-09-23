@@ -1,7 +1,7 @@
 import logging
 import os
 
-from hexactrl_script import redis_interface as redis_interface
+from hexactrl_script.analysis.level0 import redis_interface as redis_interface
 from steps.thread_steps import DynamicThreadStep
 
 logger = logging.getLogger("redis")
@@ -27,7 +27,7 @@ def open_redis(data):
     logger.info(f"Opening Redis with key {key}")
     redis_intf = redis_interface.RedisInterface(key)
     
-    template = os.path.join("hexactrl_script", data["board_config"]["redis_template"])
+    template = data["board_config"]["redis_template"]
     logger.debug(f"Loading tempalte {template}")
     redis_intf.initFromTemplate(template)
 

@@ -22,7 +22,7 @@ def load_config(data: object) -> object:
     logger.info("Loading Config...")
 
     if data["board"] == "ld-full":
-        file = "hexactrl_script/configs/XLFL_production_test_ua.yaml" # TODO Read From Data
+        file = "flows/assembled_electrical/XLFL_production_test_ua.yaml" # TODO Read From Data
     else:
         raise ValueError(f"Board {data['board']} not implemented!")
     logger.debug(f"Identified config as {file}")
@@ -92,7 +92,7 @@ def i2c_checker_2(output_dir: str, data: object) -> None:
 
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            i2c_checker.i2c_checker(data["sockets"]["i2c"], output_dir, dut, data["board_config"], logger)
+            i2c_checker.i2c_checker(data["sockets"]["i2c"], output_dir, dut, data["board_config"])
     logger.debug(f"i2c_checker wrote to stdout/stderr: {output.getvalue()}")
 
     redis = data["redis"]
