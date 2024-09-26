@@ -57,7 +57,7 @@ class VerifyBoardStep(TestStep):
 
         # Verifications
         label = QLabel("Does your board look like the provided image?")
-            
+        
         # Buttons
         buttons_layout = QHBoxLayout()
         
@@ -108,6 +108,9 @@ class VerifyBoardStep(TestStep):
         button.clicked.connect(finish)
         layout.addWidget(button)
 
+        # Focus Yes
+        widget.displayed.connect(yes_button.setFocus)
+
         # Wrapup
         widget.setLayout(layout)
         return widget
@@ -155,6 +158,9 @@ class ScanHGCROCs(TestStep):
         button = QPushButton("Next")
         button.clicked.connect(finish)
         layout.addWidget(button)
+
+        # Focus Text
+        widget.displayed.connect(lines[0].setFocus)
 
         # Wrapup
         widget.setLayout(layout)

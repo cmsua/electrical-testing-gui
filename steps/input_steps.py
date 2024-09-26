@@ -41,6 +41,7 @@ class DisplayStep(TestStep):
         button = QPushButton("Next")
         button.clicked.connect(finish)
         layout.addWidget(button)
+        widget.displayed.connect(button.setFocus)
 
         # Wrapup
         widget.setLayout(layout)
@@ -132,6 +133,9 @@ class VerifyStep(TestStep):
         button.clicked.connect(finish)
         layout.addWidget(button)
 
+        # Focus First Button
+        widget.displayed.connect(yes_buttons[0].setFocus)
+
         # Wrapup
         widget.setLayout(layout)
         return widget
@@ -170,6 +174,9 @@ class SelectStep(TestStep):
         button.clicked.connect(finish)
         layout.addWidget(button)
 
+        # Focus Selector
+        widget.displayed.connect(selector.setFocus)
+
         # Wrapup
         widget.setLayout(layout)
         return widget
@@ -190,6 +197,7 @@ class TextAreaStep(TestStep):
 
         # Text Area
         text = QTextEdit()
+        text.setTabChangesFocus(True)
         layout.addWidget(text)
 
         # Stretch
@@ -203,6 +211,9 @@ class TextAreaStep(TestStep):
         button = QPushButton("Finish")
         button.clicked.connect(finish)
         layout.addWidget(button)
+
+        # Focus Area
+        widget.displayed.connect(text.setFocus)
 
         # Wrapup
         widget.setLayout(layout)

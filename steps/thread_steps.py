@@ -59,6 +59,9 @@ class ThreadStep(TestStep):
         self.button.setEnabled(False)
         layout.addWidget(self.button)
 
+        # Focus Finish Button
+        widget.displayed.connect(self.button.setFocus)
+
         # When thr thread exits
         self.finished_with_data = False
         self.finished_with_error = False
@@ -78,6 +81,7 @@ class ThreadStep(TestStep):
             else:
                 self.button.setText("Continue...")
                 self.button.setEnabled(True)
+                self.button.setFocus()
 
         # When the thread exits with data, save it
         self._thread = self.create_thread(data)

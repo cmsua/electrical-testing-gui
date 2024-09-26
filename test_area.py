@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
 from misc_widgets import QLed
 
-from objects import TestFlow, TestStage
+from objects import TestFlow, TestStage, TestWidget
 import datetime
 
 import logging
@@ -104,8 +104,10 @@ class InteractionAreaWidget(QFrame):
         self.setLayout(self._layout)
 
     # Set the main widget and destroy the old
-    def set_widget(self, widget: QWidget) -> None:
+    def set_widget(self, widget: TestWidget) -> None:
         self._layout.replaceWidget(self._current_widget, widget)
+        widget.displayed.emit()
+
         self._current_widget.deleteLater()
         self._current_widget = widget
 

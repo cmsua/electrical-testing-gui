@@ -6,6 +6,10 @@ from enum import Enum
 
 # A widget representing one step of a test
 class TestWidget(QWidget):
+    # Emitted when the widget is displayed
+    # Use to set focus
+    displayed = pyqtSignal()
+    
     # The test widget is presumed read-only after emitting finished or crashed
     # It will remain rendered until advance is passed
     finished = pyqtSignal(object)
