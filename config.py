@@ -48,9 +48,6 @@ class Config:
     def get_output_dir(self) -> str:
         return path.abspath(self.config["AssembledBoards"].get("OutputDir"))
     
-    def get_test_config_template_path(self) -> str:
-        return path.abspath(self.config["AssembledBoards"].get("TestConfigTemplate"))
-    
     def get_power_supply_address(self) -> str:
         return self.config["AssembledBoards"].get("PowerSupplyAddress")
     
