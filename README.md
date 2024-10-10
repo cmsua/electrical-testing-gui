@@ -1,4 +1,5 @@
 # Hexaboard Electrical Testing GUI
+
 ## University of Alabama
 
 ## Installation
@@ -19,6 +20,7 @@ pip3 install -r requirements.txt
 ```
 
 ## Developer Reference Guide
+
 ### Design
 
 In this interface, the minimum actionable unit is defined as a **Test Step**, which represents one "action" taken on the test environment, such as enabling power supply, scanning barcodes, or prompting the user to connect two components. Each test step is organized sequentially into a **Test Stage**, which is an ordered list of test steps. Three stages, **Setup**, **Runtime**, and **Shutdown** are then organized into one **Test Flow**.
