@@ -17,11 +17,11 @@ def filter_no_logs(info: tarfile.TarInfo) -> tarfile.TarInfo:
 # This excludes analysis (eg. plots) and only includes raw data
 def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, redis_data: object) -> None:
     logger.info(f"Archiving { test_id }")
-    archive_path = f"{ data_dir }/{ test_id }.tar.gz"
+    archive_path = os.path.join(data_dir, f"{ test_id }.tar.gz")
     
     # Check if we've done this before
     if os.path.exists(archive_path):
-        logger.warn(f"File { archive_path } already exists! Skipping...")
+        logger.warning(f"File { archive_path } already exists! Skipping...")
         return
     
     # Create archive
@@ -40,13 +40,14 @@ def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, redis_
         tar.addfile(file_info, redis_bytes_io)
 
         # Add Files
-        for file in os.listdir(f"{ data_dir }/{ test_id }"):
-            logger.debug(f"Writing { file }")
-            tar.add(f"{ data_dir }/{ test_id }/{ file }", file, filter=filter_no_logs)
+        if os.path.exists(os.path.join(data_dir, test_id)):
+            for file in os.listdir(os.path.join(data_dir, test_id)):
+                logger.debug(f"Writing { file }")
+                tar.add(os.path.join(data_dir, test_id, file), file, filter=filter_no_logs)
     
     if delete_uncompressed:
         logger.info("Removing uncompressed data")
-        shutil.rmtree(f"{ data_dir }/{ test_id }")
+        shutil.rmtree(os.path.join(data_dir, test_id))
 
 # Full Cleanup of all tests
 def cleanup(out_dir: str, data: object) -> None:
