@@ -3,20 +3,8 @@ rocs:
   0: "320-ROC-0000"
   1: "320-ROC-0001"
   2: "320-ROC-0002"
-controllerIP: hgc-kria-002 # ip address of the teststand
-zynqAppBasedURL: http://hgc-kria-002:8080
-odir: data # output directory
 daq_and_fe_configuration: configs/initLD-trophyV3.yaml # initial configuration yaml file"
 daqPort: 6000    # port of the zynq waiting for daq config and commands (configure/start/stop/is_done)
 i2cPort: 5555    # port of the zynq waiting for I2C config and commands (initialize/configure/read_pwr,read/measadc)
 pullerPort: 6001 # port of the client PC (loccalhost for the moment) waiting for daq config and commands (configure/start/stop)
-redis_template: flows/assembled_electrical/redis-template.yaml # template file for storing test result in redis 
-power_monitoring:
-  BV: 
-    key: PowerSuppliesHV
-    Imon: PowerSupplies/Keithley2410/pool05550010/I
-    Vmon: PowerSupplies/Keithley2410/pool05550010/V
-  LV:
-    key: PowerSuppliesLV
-    Imon: PowerSupplies/PS_Lab27/I1
-    Vmon: PowerSupplies/PS_Lab27/V1
+redis_template: flows/assembled_electrical/redis-template.yaml # template file for storing test result in redis
