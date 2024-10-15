@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QRadioButton, QLabel, QPushButton, QLineEdit
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QRadioButton, QLabel, QPushButton, QLineEdit, QLayout
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
@@ -144,7 +144,7 @@ class ScanHGCROCs(TestStep):
 
         # Image
         image_label = QLabel()
-        image_label.setPixmap(QPixmap(board["hgcrocs_location"]))
+        image_label.setPixmap(QPixmap(board["hgcrocs_location"]).scaled(512, 512, Qt.AspectRatioMode.KeepAspectRatio))
         layout.addWidget(image_label)
 
         # Stretch
@@ -167,7 +167,7 @@ class ScanHGCROCs(TestStep):
         # Focus Text
         widget.displayed.connect(lines[0].setFocus)
 
-        # Wrapup
+        # Wrapup    
         widget.setLayout(layout)
         return widget
     
