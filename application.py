@@ -1,12 +1,10 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel
 
-from config import config
 from test_area import TestArea
 from flows.assembled_electrical.flow import AssembledHexaboardFlow
 
 import sys
 
-import logging
 import log_utils
 
 class MainWindow(QMainWindow):
@@ -26,7 +24,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(header)
 
         # Add Institution Name
-        header = QLabel(config.get_institution())
+        header = QLabel("The University of Alabama")
         font = header.font()
         font.setPointSize(int(font.pointSize() * 2))
         font.setBold(True)

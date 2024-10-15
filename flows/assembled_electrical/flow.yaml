@@ -1,0 +1,227 @@
+config:
+  power_supply_address: TCPIP::10.116.24.138
+  kria_address: 10.116.24.233
+  kria_daq_port: 6000
+  kria_i2c_port: 5555
+  kria_management_port: 8080
+  local_daq_port: 6001
+  redis_template: flows/assembled_electrical/redis-template.yaml
+  users:
+    - Nathan Nguyen
+    - Anonymous
+  output_dir: ./data
+  hexactrl_sw_dir: /opt/hexactrl/ROCv3
+
+# Setup Steps
+initialization:
+  # Fundamentals
+  - name: ESD Strap
+    type: display
+    text: Ensure you are wearing an ESD strap
+
+  - name: Select User
+    type: select_user
+    text: "Select User:"
+  
+  - name: "Wait for Kria"
+    type: kria_wait
+    text: "Ensure that the Kria is powered on and connected to the network. This may take a minute or two to load."
+    delay: 0.05
+    auto_advance: true
+  
+  - name: "Wait for Power Supply"
+    type: power_supply_wait
+    data_field: power_supply
+    text: |-
+      Ensure that the power supply is on, and reading the following values:
+      1.5V, 3.23A, No Channels On
+    delay: 0.05
+    auto_advance: true
+    
+  # Prepare Board
+  - name: "Hexaboard Present"
+    type: display
+    text: "Prepare a hexaboard."
+    image: "static/assembled_electrical/hexaboard.jpg"
+  
+
+  # Data Entry
+  - name: "Board Identification"
+    type: scan_board
+    data_field: board_barcode
+    text: "Scan the central board barcode text below"
+  
+  - name: "Board Verification"
+    type: verify_board
+    data_field: board
+
+  - name: "Scan HGCROCs"
+    type: scan_hgcrocs
+    data_field: hgcrocs
+
+  # Physical Setup
+  - name: "Hexaboard In Stand"
+    type: display
+    text: "Place each hexaboard in the test stand. Note the orientation of the board in the stand, as the stand's clearance at the edges is not rotationally symnetric."
+    image: "static/assembled_electrical/hexaboard_in_riser.jpg"
+
+  - name: "Power Cables"
+    type: display
+    text: "Connect power cables to the hexaboard. Be careful to orient the connector board appropriately, as although it can be installed backwards, attempting to power the board while so will destroy it."
+    image: "static/assembled_electrical/power_cables.jpg"
+
+  - name: "Trophy - Hexaboard"
+    type: display
+    text: "Connect the hexaboard to a trophy. Some force may need applied. Support the test stand with your hand from below. The boards will connect with an audible snap."
+    image: "static/assembled_electrical/hexaboard_trophy.jpg"
+  
+  - name: "Trophy-Kria"
+    type: display
+    text: "If not alreact connected, attach the trophy to the Kria. The boards will connect silently."
+    image: "static/assembled_electrical/kria_trophy.jpg"
+
+  - name: "L3 Loopback"
+    type: display
+    text: "Connect the L3 Loopback to the hexaboard. The board should not overlap with the trophy. When correctly, the hole in the L3 Loopback chip will be centered on a support pillar below."
+    image: "static/assembled_electrical/l3_loopback.jpg"
+
+  - name: "Verification"
+    type: verify
+    text: "Ensure the following flags have been met"
+    verifications:
+      - "Power Cables Oriented Properly"
+      - "Trophy Oriented Properly"
+      - "L3 Loopback Installed Properly"
+    image: "static/assembled_electrical/l3_loopback.jpg"
+    error_on_missing: true
+  
+  - name: "Comments"
+    type: textarea
+    data_field: pre_test_comments
+    text: "Enter Pre-Test Comments"
+    accept_empty: true
+  
+# Runtime Steps
+runtime:
+  - name: "Power Supply Enable"
+    type: power_supply_enable
+    text: "The power supply should be enabled."
+    timeout: 1
+    auto_advance: true
+    
+  - name: "Kria Enable"
+    type: kria_enable
+    text: "Ensure the central LEDs on the Kria have turned blue."
+    timeout: 1
+    auto_advance: true
+
+  - name: "Load Config"
+    type: load_config
+    data_field: board_config
+    timeout: 1
+    auto_advance: true
+    text: "Loading the board's configuration files..."
+  
+  - name: "Load Redis Template"
+    type: connect_redis_load_template
+    data_field: redis
+    timeout: 1
+    auto_advance: true
+    text: "Loading Redis Templates..."
+
+  - name: "Load Firmware"
+    type: kria_load_firmware
+    timeout: 30
+    auto_advance: true
+    text: "Loading appropriate firmware for the hexaboard"
+  
+  - name: "Restart Services"
+    type: kria_restart_services
+    timeout: 1
+    auto_advance: true
+    text: "Waiting for services to restart..."
+    delay: 0.05
+
+  - name: "Create Sockets"
+    type: tests_open_sockets
+    data_field: sockets
+    timeout: 1
+    auto_advance: true
+    text: "Creating Sockets. If this hangs, something's gone wrong."
+
+  - name: "Check Power (Default)"
+    type: power_supply_check_power_default
+    timeout: 1
+    auto_advance: true
+    text: "Checking Pre-Configuration Power"
+
+  # TODO Bias Volate?
+  # TODO I2C Space Check, will fail!
+
+  - name: "Configure HGCROCs"
+    type: tests_configure_hgcrocs
+    timeout: 15
+    auto_advance: true
+    text: "Configuring the HGCROCs..."
+
+  - name: "I2C Checker"
+    type: tests_i2c_checker
+    timeout: 60
+    auto_advance: true
+    text: "Running the I2C Checker..."
+
+  - name: "Check Power (Configured)"
+    type: power_supply_check_power_configured
+    timeout: 1
+    auto_advance: true
+    text: "Checking Post-Configuration Power"
+
+  - name: "Initialize Sockets"
+    type: tests_initialize_sockets
+    timeout: 120
+    auto_advance: true
+    text: "Initializing Sockets"
+
+  - name: "Pedestal Run 1"
+    type: tests_pedestal_run
+    timeout: 60
+    auto_advance: true
+
+  - name: "Trimming"
+    type: tests_trimming
+    timeout: 60
+    auto_advance: true
+
+  - name: "Pedestal Run 2"
+    type: tests_pedestal_run
+    timeout: 60
+    auto_advance: true
+
+  - name: "Comments"
+    type: textarea
+    data_field: post_test_comments
+    text: "Enter Post-Test Comments"
+    accept_empty: true
+
+# Cleanup Steps
+shutdown:
+  - name: "Kria Disable"
+    type: kria_disable
+    text: "Ensure the central LEDs on the Kria are no longer blue."
+    timeout: 1
+    
+  - name: "Power Supply Disable"
+    type: power_supply_disable
+    text: "The power supply should be disabled."
+    timeout: 1
+  
+  - name: "Disassemble Test Station"
+    type: display
+    text: "Remove the board from the trophy, LD Loopback, and Power"
+
+  # TODO Sticker
+  - name: "Cleanup + Upload"
+    type: cleanup
+    text: "Archiving and uploading data. Please wait..."
+    auto_advance: false
+    timeout: 5

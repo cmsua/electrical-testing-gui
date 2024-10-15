@@ -39,6 +39,8 @@ class TestStep(ABC):
     def get_output_status(self, in_data, out_data) -> list[str]:
         return ["green"]
 
+    # Data is specific to this run
+    # config is global and final
     @abstractmethod
     def create_widget(self, data: object) -> TestWidget:
         pass

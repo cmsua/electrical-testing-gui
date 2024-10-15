@@ -25,7 +25,7 @@ class VerifyBoardStep(TestStep):
 
     def create_widget(self, data: object) -> TestWidget:
         # Identify Board
-        scanned_barcode = data["board-barcode"]
+        scanned_barcode = data["board_barcode"]
         found_board = boards["default"]
         found_board_key = "default"
 

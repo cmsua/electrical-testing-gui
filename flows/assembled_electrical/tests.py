@@ -162,7 +162,7 @@ def do_pedestal_run(output_dir: str, data: object) -> None:
         logger.info("Pedestal Run Passed")
 
 # Run All Other Scans
-def do_scans(output_dir: str, data: object) -> None:
+def do_trimming(output_dir: str, data: object) -> None:
     logger.info("Doing all scans!")
 
     dut = data["board_config"]["dut"]
