@@ -142,6 +142,11 @@ class ScanHGCROCs(TestStep):
         lines_widget.setLayout(lines_layout)
         layout.addWidget(lines_widget)
 
+        # Image
+        image_label = QLabel()
+        image_label.setPixmap(QPixmap(board["hgcrocs_location"]))
+        layout.addWidget(image_label)
+
         # Stretch
         layout.addStretch()
 
