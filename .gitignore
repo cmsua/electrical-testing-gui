@@ -165,6 +165,3 @@ cython_debug/
 configs/
 data/
 config.ini
-
-# Restricted
-static/assembled_electrical
