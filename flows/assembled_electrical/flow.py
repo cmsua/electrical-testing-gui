@@ -96,12 +96,16 @@ def load_step(step: object, config: object) -> TestStep:
             return ScanHGCROCs(step["name"], step["data_field"])
         
         # Actual Tests
-        elif step["type"] == "load_config":
-            return easy_dynamic_thread(load_config)
+        elif step["type"] == "create_dut":
+            return easy_dynamic_thread(create_dut)
         elif step["type"] == "connect_redis_load_template":
-            return easy_dynamic_thread(open_redis)
+            return easy_dynamic_thread(partial(open_redis, config["redis_template"]))
         elif step["type"] == "tests_open_sockets":
-            return easy_dynamic_thread(partial(create_sockets, config["kria_address"]))
+            return easy_dynamic_thread(partial(create_sockets,
+                config["kria_address"],
+                config["kria_i2c_port"],
+                config["kria_daq_port"],
+                config["local_daq_port"]))
         elif step["type"] == "tests_configure_hgcrocs":
             return easy_dynamic_thread(configure_hgcroc)
         elif step["type"] == "tests_i2c_checker":

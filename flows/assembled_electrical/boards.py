@@ -5,7 +5,8 @@ boards = {
         'search_key': 'manual ld-full',
         'image': 'static/assembled_electrical/ld-full/board.png',
         'hgcrocs_location': 'static/assembled_electrical/ld-full/hgcrocs.png',
-        'hgcrocs': 3
+        'hgcrocs': 3,
+        'board_config': 'configs/initLD-trophyV3.yaml'
     },
     'ld-five': {
         'name': 'Low Density Five',

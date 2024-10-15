@@ -21,22 +21,20 @@ class DynamicThreadStepWithRedisCheck(DynamicThreadStep):
         return ['blue']
 
 # Open Redis, Init Template
-def open_redis(data):
-    key = data["board_config"]["dut"]
+def open_redis(template: str, data: object) -> None:
+    key = data["dut"]
 
     logger.info(f"Opening Redis with key {key}")
     redis_intf = redis_interface.RedisInterface(key)
     
-    template = data["board_config"]["redis_template"]
     logger.debug(f"Loading tempalte {template}")
     redis_intf.initFromTemplate(template)
 
-    rocs = data["board_config"]["rocs"]
-    logger.debug(f"Loading ROCs {rocs}")
+    logger.debug(f"Loading ROCs {data['hgcrocs']}")
 
     roc_dict = {}
-    for index in range(len(rocs)):
-        roc_dict[f'ROC{index}'] = rocs[index]
+    for index in range(len(data["hgcrocs"])):
+        roc_dict[f'ROC{index}'] = data["hgcrocs"][index]
     redis_intf.set_multiple(roc_dict)
 
     return redis_intf

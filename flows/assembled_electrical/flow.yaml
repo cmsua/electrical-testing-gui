@@ -115,12 +115,12 @@ runtime:
     timeout: 1
     auto_advance: true
 
-  - name: "Load Config"
-    type: load_config
-    data_field: board_config
+  - name: "Create dut"
+    type: create_dut
+    data_field: dut
     timeout: 1
     auto_advance: true
-    text: "Loading the board's configuration files..."
+    text: "Generating a uuid for dut"
   
   - name: "Load Redis Template"
     type: connect_redis_load_template
@@ -209,7 +209,7 @@ shutdown:
     type: kria_disable
     text: "Ensure the central LEDs on the Kria are no longer blue."
     timeout: 1
-    
+
   - name: "Power Supply Disable"
     type: power_supply_disable
     text: "The power supply should be disabled."
