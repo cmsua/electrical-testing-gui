@@ -6,7 +6,7 @@ import io
 import contextlib
 import uuid
 
-from . import boards
+from .. import boards
 from .powersupply import check_power
 from hexactrl_script import zmq_controler as zmqctrl
 from hexactrl_script import i2c_checker
