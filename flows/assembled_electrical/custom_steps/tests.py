@@ -57,7 +57,7 @@ def check_power_default(data: object) -> None:
     logger.debug(f"Recieved {result} (Power: {power}), saving to Redis")
 
     data["redis"].set("POWER:DEFAULT", power)
-
+    return power
 
 # Not sure what this does
 def configure_hgcroc(data: object) -> None:
@@ -98,6 +98,7 @@ def check_power_configured(data: object) -> None:
     logger.debug(f"Recieved {result} (Power: {power}), saving to Redis")
 
     data["redis"].set("POWER:CONFIGURED", power)
+    return power
 
 # Not sure what this does either
 def initialize_sockets(data: object) -> None:
