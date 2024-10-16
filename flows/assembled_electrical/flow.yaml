@@ -225,7 +225,7 @@ shutdown:
   - name: "Power Supply Disable"
     type: power_supply_disable
     text: "The power supply should be disabled."
-    timeout: 1
+    timeout: 5
   
   - name: "Disassemble Test Station"
     type: display
