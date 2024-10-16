@@ -35,7 +35,7 @@ class VariableHandler(logging.Handler):
 def setup_logging():
     # Setup color logging,
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(logging.INFO)
     ch.setFormatter(Formatter())
 
     varHandler = VariableHandler()

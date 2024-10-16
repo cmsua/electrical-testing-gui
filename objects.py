@@ -57,3 +57,7 @@ class TestFlow(ABC):
     @abstractmethod
     def get_steps(self, flow: TestStage) -> list[TestStep]:
         pass
+
+    @abstractmethod
+    def get_watcher(self, fetch_data) -> QWidget:
+        pass

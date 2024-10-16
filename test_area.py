@@ -111,6 +111,29 @@ class InteractionAreaWidget(QFrame):
         self._current_widget.deleteLater()
         self._current_widget = widget
 
+# Watcher Wrapper
+class WatcherWrapperWidget(QFrame):
+    def __init__(self) -> None:
+        super().__init__()
+        self._layout = QVBoxLayout()
+
+        # Header
+        label = QLabel("Outputs")
+        font = label.font()
+        font.setPointSizeF(font.pointSize() * 1.5)
+        label.setFont(font)
+        self._layout.addWidget(label)
+
+        # Finishing Touches
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setFrameShadow(QFrame.Shadow.Raised)
+        self.setLayout(self._layout)
+
+    # Set the main widget and destroy the old
+    def addWidget(self, widget: QWidget) -> None:
+        self._layout.addWidget(widget)
+
 # The main test area, which handles everything
 class TestArea(QWidget):
     def __init__(self, flow: TestFlow) -> None:
@@ -126,10 +149,26 @@ class TestArea(QWidget):
         self._stage = TestStage.SETUP
         self._index = 0
         self._interaction = InteractionAreaWidget()
+        self._test_data = {}
         
         # Layout, Status, Interaction Area
         layout = QHBoxLayout()
-        layout.addWidget(self._status)
+        
+        # Status Area
+        status_layout = QVBoxLayout()
+        status_layout.setContentsMargins(0, 0, 0, 0)
+
+        self._watcher = WatcherWrapperWidget()
+        self._watcher.addWidget(flow.get_watcher(lambda: self._test_data))
+        status_layout.addWidget(self._watcher)
+
+        status_layout.addWidget(self._status)
+
+        status_widget = QWidget()
+        status_widget.setLayout(status_layout)
+        layout.addWidget(status_widget)
+
+        # Main Area
         layout.addWidget(self._interaction)
 
         self.start_new_test()
@@ -154,6 +193,7 @@ class TestArea(QWidget):
     def step_crashed(self, error):
         self.logger.critical(f"Stage {self._stage} step ID {self._index} crashed with error {error}")
         current_step = self._flow.get_steps(self._stage)[self._index]
+        self.logger.critical(f"Step name: {current_step.get_name()}")
 
         # Save Debug Data
         if self._stage not in self._debug_data:
