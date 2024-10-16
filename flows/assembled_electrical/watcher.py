@@ -159,9 +159,10 @@ class WatcherThread(QThread):
                     status[text] = not_initialized
 
             self.output.emit(status)
-            time.sleep(0.1)
         except Exception as e:
             logger.critical(f"Exception in watcher: {e}")
+
+        time.sleep(1)
 
 class Watcher(QWidget):
     def __init__(self, kria_address: str, fetch_data) -> None:
@@ -170,9 +171,16 @@ class Watcher(QWidget):
         self.kria_address = kria_address
         self.fetch_data = fetch_data
 
-        # Header Already Provided
         layout = QFormLayout()
         
+        # Header
+        label = QLabel("Live Outputs")
+        font = label.font()
+        font.setPointSizeF(font.pointSize() * 1.5)
+        label.setFont(font)
+        layout.addRow(label)
+        
+        # Text Fields
         self.text_fields = {}
         for text in non_redis_labels:
             self.text_fields[text] = QLabel("Uninitialized")

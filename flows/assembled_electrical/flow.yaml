@@ -117,7 +117,7 @@ runtime:
   - name: "Power Supply Enable"
     type: power_supply_enable
     text: "The power supply should be enabled."
-    timeout: 1
+    timeout: 5
     auto_advance: true
     
   - name: "Kria Enable"

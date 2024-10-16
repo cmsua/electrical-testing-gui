@@ -1,14 +1,14 @@
 from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
-from misc_widgets import QLed
 
+from misc_widgets import QHLine
 from objects import TestFlow, TestStage, TestWidget, TestFinishedBehavior
-import datetime
 
+import datetime
 import logging
 import log_utils
 
 # This contains all the LEDs
-class StatusWidget(QFrame):
+class StatusWidget(QWidget):
     def __init__(self, flow: TestFlow) -> None:
         super().__init__()
         self._messages = {}
@@ -23,11 +23,10 @@ class StatusWidget(QFrame):
         layout.addWidget(label)
         
         # Setup messages
-        messages_layout = QHBoxLayout()
+        messages_layout = QFormLayout()
         
         # One column per stage
         for stage in TestStage:
-            stage_layout = QFormLayout()
             
             self._messages[stage] = []
             steps = flow.get_steps(stage)
@@ -36,12 +35,9 @@ class StatusWidget(QFrame):
                 step = steps[step_index]
 
                 self._messages[stage].append(QLabel("Uninitialized"))
-                stage_layout.addRow(QLabel(step.get_name()), self._messages[stage][step_index])
+                messages_layout.addRow(QLabel(step.get_name()), self._messages[stage][step_index])
             
-            # Add Stage
-            stage_widget = QWidget()
-            stage_widget.setLayout(stage_layout)
-            messages_layout.addWidget(stage_widget)
+            messages_layout.addRow(QHLine())
 
         # Add LEDs
         messages_widget = QWidget()
@@ -51,8 +47,6 @@ class StatusWidget(QFrame):
 
         # Final Touches
         self.setLayout(layout)
-        self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setFrameShadow(QFrame.Shadow.Raised)
 
     def clear_messages(self):
         for stage in self._messages:
@@ -103,29 +97,6 @@ class InteractionAreaWidget(QFrame):
         self._current_widget.deleteLater()
         self._current_widget = widget
 
-# Watcher Wrapper
-class WatcherWrapperWidget(QFrame):
-    def __init__(self) -> None:
-        super().__init__()
-        self._layout = QVBoxLayout()
-
-        # Header
-        label = QLabel("Live Outputs")
-        font = label.font()
-        font.setPointSizeF(font.pointSize() * 1.5)
-        label.setFont(font)
-        self._layout.addWidget(label)
-
-        # Finishing Touches
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setFrameShadow(QFrame.Shadow.Raised)
-        self.setLayout(self._layout)
-
-    # Set the main widget and destroy the old
-    def addWidget(self, widget: QWidget) -> None:
-        self._layout.addWidget(widget)
-
 # The main test area, which handles everything
 class TestArea(QWidget):
     def __init__(self, flow: TestFlow) -> None:
@@ -147,18 +118,17 @@ class TestArea(QWidget):
         layout = QHBoxLayout()
         
         # Status Area
-        status_layout = QVBoxLayout()
+        status_frame = QFrame()
+
+        status_layout = QHBoxLayout()
         status_layout.setContentsMargins(0, 0, 0, 0)
-
-        self._watcher = WatcherWrapperWidget()
-        self._watcher.addWidget(flow.get_watcher(lambda: self._test_data))
-        status_layout.addWidget(self._watcher)
-
         status_layout.addWidget(self._status)
+        status_layout.addWidget(flow.get_watcher(lambda: self._test_data))
 
-        status_widget = QWidget()
-        status_widget.setLayout(status_layout)
-        layout.addWidget(status_widget)
+        status_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        status_frame.setFrameShadow(QFrame.Shadow.Raised)
+        status_frame.setLayout(status_layout)
+        layout.addWidget(status_frame)
 
         # Main Area
         layout.addWidget(self._interaction)
