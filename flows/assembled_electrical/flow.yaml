@@ -162,7 +162,7 @@ runtime:
 
   - name: "Check Power (Default)"
     type: power_supply_check_power_default
-    timeout: 1
+    timeout: 5
     auto_advance: true
     text: "Checking Pre-Configuration Power"
 
@@ -183,7 +183,7 @@ runtime:
 
   - name: "Check Power (Configured)"
     type: power_supply_check_power_configured
-    timeout: 1
+    timeout: 5
     auto_advance: true
     text: "Checking Post-Configuration Power"
 
