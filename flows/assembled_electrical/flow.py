@@ -3,12 +3,12 @@ from steps.thread_steps import DynamicThreadStep
 
 from objects import TestFlow, TestStage, TestStep
 
-from flows.assembled_electrical.powersupply import *
-from flows.assembled_electrical.kria import *
-from flows.assembled_electrical.redis import *
-from flows.assembled_electrical.scanner import *
-from flows.assembled_electrical.tests import *
-from flows.assembled_electrical.cleanup import cleanup
+from .custom_steps.powersupply import *
+from .custom_steps.kria import *
+from .custom_steps.redis import *
+from .custom_steps.scanner import *
+from .custom_steps.tests import *
+from .custom_steps.cleanup import cleanup
 
 from functools import partial
 

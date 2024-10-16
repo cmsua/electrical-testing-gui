@@ -1,10 +1,10 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QRadioButton, QLabel, QPushButton, QLineEdit, QLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QRadioButton, QLabel, QPushButton, QLineEdit, QSizePolicy
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
 from objects import TestWidget, TestStep
 from steps.input_steps import TextAreaStep
-from .boards import boards
+from ..boards import boards
 
 import logging
 
@@ -43,17 +43,14 @@ class VerifyBoardStep(TestStep):
 
         widget = TestWidget()
         layout = QVBoxLayout()
-
-        # Content
-        content_layout = QHBoxLayout()
         
         # Left Section
-        left_layout = QFormLayout()
+        form_layout = QFormLayout()
 
         # Text
         text = QLabel(f"Board Identified: {found_board['name']}")
         text.setWordWrap(True)
-        left_layout.addRow(text)
+        form_layout.addRow(text)
 
         # Verifications
         label = QLabel("Does your board look like the provided image?")
@@ -72,24 +69,19 @@ class VerifyBoardStep(TestStep):
 
         buttons_widget = QWidget()
         buttons_widget.setLayout(buttons_layout)
-        left_layout.addRow(label, buttons_widget)
+        form_layout.addRow(label, buttons_widget)
 
 
-        # End Left Section
-        left_widget = QWidget()
-        left_widget.setLayout(left_layout)
-        content_layout.addWidget(left_widget)
+        # End Form Section
+        form_widget = QWidget()
+        form_widget.setLayout(form_layout)
+        layout.addWidget(form_widget)
 
         # Right Section
         # Image
         image = QLabel()
-        image.setPixmap(QPixmap(found_board["image"]).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio))
-        content_layout.addWidget(image)
-
-        # End Content
-        content_widget = QWidget()
-        content_widget.setLayout(content_layout)
-        layout.addWidget(content_widget)
+        image.setPixmap(QPixmap(found_board["image"]).scaled(512, 512, Qt.AspectRatioMode.KeepAspectRatio))
+        layout.addWidget(image)
 
         # Stretch
         layout.addStretch()
@@ -112,6 +104,7 @@ class VerifyBoardStep(TestStep):
         widget.displayed.connect(yes_button.setFocus)
 
         # Wrapup
+        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMaximumSize)
         widget.setLayout(layout)
         return widget
     
