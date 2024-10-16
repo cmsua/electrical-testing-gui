@@ -24,6 +24,7 @@ class StatusWidget(QWidget):
         
         # Setup messages
         messages_layout = QFormLayout()
+        messages_layout.setContentsMargins(0, 0, 0, 0)
         
         # One column per stage
         for stage in TestStage:
