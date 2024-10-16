@@ -24,9 +24,9 @@ class AssembledHexaboardFlow(TestFlow):
 
         os.environ["PATH"] = os.environ["PATH"] + ":" + os.path.abspath(os.path.join(self._config["config"]["hexactrl_sw_dir"], "bin"))
 
-        self._setup_steps = [load_step(step, self._config["config"]) for step in self._config["initialization"]]
-        self._runtime_steps = [load_step(step, self._config["config"]) for step in self._config["runtime"]]
-        self._shutdown_steps = [load_step(step, self._config["config"]) for step in self._config["shutdown"]]
+        self._setup_steps = load_steps(self._config["initialization"], self._config["config"])
+        self._runtime_steps = load_steps(self._config["runtime"], self._config["config"])
+        self._shutdown_steps = load_steps(self._config["shutdown"], self._config["config"])
 
 
     def get_steps(self, stage: TestStage) -> list[TestStep]:
@@ -37,6 +37,19 @@ class AssembledHexaboardFlow(TestFlow):
         elif stage == TestStage.SHUTDOWN:
             return self._shutdown_steps
     
+
+def load_steps(steps: object, config: object) -> list[TestStep]:
+    loaded_steps = []
+    for step in steps:
+        skip_optional = config["skip_optional"] if "skip_optional" in config else False
+        optional = step["optional"] if "optional" in step else False
+        if skip_optional and optional:
+            continue
+
+        loaded_steps.append(load_step(step, config))
+
+    return loaded_steps
+
 # Load a step from YAML
 def load_step(step: object, config: object) -> TestStep:
     try:

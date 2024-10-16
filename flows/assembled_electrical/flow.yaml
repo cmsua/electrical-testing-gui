@@ -11,6 +11,7 @@ config:
     - Anonymous
   output_dir: ./data
   hexactrl_sw_dir: /opt/hexactrl/ROCv3
+  skip_optional: true
 
 # Setup Steps
 initialization:
@@ -18,10 +19,12 @@ initialization:
   - name: ESD Strap
     type: display
     text: Ensure you are wearing an ESD strap
+    optional: true
 
   - name: Select User
     type: select_user
     text: "Select User:"
+    optional: true
   
   - name: "Wait for Kria"
     type: kria_wait
@@ -43,6 +46,7 @@ initialization:
     type: display
     text: "Prepare a hexaboard."
     image: "static/assembled_electrical/hexaboard.jpg"
+    optional: true
   
 
   # Data Entry
@@ -64,26 +68,31 @@ initialization:
     type: display
     text: "Place each hexaboard in the test stand. Note the orientation of the board in the stand, as the stand's clearance at the edges is not rotationally symnetric."
     image: "static/assembled_electrical/hexaboard_in_riser.jpg"
+    optional: true
 
   - name: "Power Cables"
     type: display
     text: "Connect power cables to the hexaboard. Be careful to orient the connector board appropriately, as although it can be installed backwards, attempting to power the board while so will destroy it."
     image: "static/assembled_electrical/power_cables.jpg"
+    optional: true
 
   - name: "Trophy - Hexaboard"
     type: display
     text: "Connect the hexaboard to a trophy. Some force may need applied. Support the test stand with your hand from below. The boards will connect with an audible snap."
     image: "static/assembled_electrical/hexaboard_trophy.jpg"
+    optional: true
   
   - name: "Trophy-Kria"
     type: display
     text: "If not alreact connected, attach the trophy to the Kria. The boards will connect silently."
     image: "static/assembled_electrical/kria_trophy.jpg"
+    optional: true
 
   - name: "L3 Loopback"
     type: display
     text: "Connect the L3 Loopback to the hexaboard. The board should not overlap with the trophy. When correctly, the hole in the L3 Loopback chip will be centered on a support pillar below."
     image: "static/assembled_electrical/l3_loopback.jpg"
+    optional: true
 
   - name: "Verification"
     type: verify
@@ -94,12 +103,14 @@ initialization:
       - "L3 Loopback Installed Properly"
     image: "static/assembled_electrical/l3_loopback.jpg"
     error_on_missing: true
+    optional: true
   
   - name: "Comments"
     type: textarea
     data_field: pre_test_comments
     text: "Enter Pre-Test Comments"
     accept_empty: true
+    optional: true
   
 # Runtime Steps
 runtime:
@@ -202,6 +213,7 @@ runtime:
     data_field: post_test_comments
     text: "Enter Post-Test Comments"
     accept_empty: true
+    optional: true
 
 # Cleanup Steps
 shutdown:
@@ -218,6 +230,7 @@ shutdown:
   - name: "Disassemble Test Station"
     type: display
     text: "Remove the board from the trophy, LD Loopback, and Power"
+    optional: true
 
   # TODO Sticker
   - name: "Cleanup + Upload"
