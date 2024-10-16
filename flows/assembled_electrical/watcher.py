@@ -112,10 +112,10 @@ class WatcherThread(QThread):
 
             # Check Kria Services
             try:
-                daq_response = requests.get(f"{self.kria_address}/daq", timeout=0.1).json()["text"].split("Active: ")[1].split(" since")[0]
+                daq_response = requests.get(f"{self.kria_address}/daq", timeout=0.3).json()["text"].split("Active: ")[1].split(" since")[0]
                 logger.debug(f"Recieved daq-server status {daq_response}")
 
-                i2c_response = requests.get(f"{self.kria_address}/daq", timeout=0.1).json()["text"].split("Active: ")[1].split(" since")[0]
+                i2c_response = requests.get(f"{self.kria_address}/daq", timeout=0.3).json()["text"].split("Active: ")[1].split(" since")[0]
                 logger.debug(f"Recieved i2c-server status {i2c_response}")
 
                 text = f"I2C: {i2c_response}, DAQ: {daq_response}"
@@ -127,9 +127,12 @@ class WatcherThread(QThread):
 
             # Check Power Supply
             try:
-                if "power_supply" in self.data:                
-                    voltage = float(self.data["power_supply"].query("MEASure:VOLTage? CH1")),
-                    current = float(self.data["power_supply"].query("MEASure:CURRent? CH1"))
+                if "power_supply" in self.data:
+                    self.data["power_supply"]["lock"].acquire()
+                    voltage = float(self.data["power_supply"]["supply"].query("MEASure:VOLTage? CH1"))
+                    current = float(self.data["power_supply"]["supply"].query("MEASure:CURRent? CH1"))
+                    self.data["power_supply"]["lock"].release()
+
                     logger.debug(f"Read Power Supply values {voltage}V {current}A")
                     status["Power Supply"] = [f"{voltage}V {current}A", "green"]
                 else:
@@ -161,8 +164,8 @@ class WatcherThread(QThread):
             self.output.emit(status)
         except Exception as e:
             logger.critical(f"Exception in watcher: {e}")
-
-        time.sleep(1)
+            
+        time.sleep(0.1)
 
 class Watcher(QWidget):
     def __init__(self, kria_address: str, fetch_data) -> None:
