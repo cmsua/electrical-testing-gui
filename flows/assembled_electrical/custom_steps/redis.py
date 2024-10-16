@@ -10,15 +10,15 @@ class DynamicThreadStepWithRedisCheck(DynamicThreadStep):
     def __init__(self, name: str, message: str, method, auto_advance: bool=False, data_field: str=None, timeout: int=0) -> None:
         super().__init__(name, message, method, auto_advance, data_field, timeout)
 
-    def get_output_status(self, in_data, out_data) -> list[str]:
+    def get_output_action(self, in_data, out_data) -> list[str]:
         test_status = in_data["redis"].get('TEST_SUCCESS')
         logger.debug(f"Got {test_status} at the end of step during verification")
 
         if test_status == 'FAIL':
-            return ['yellow']
-        elif test_status == 'SUCCESS':
-            return ['green']
-        return ['blue']
+            return False
+        elif test_status == 'PASS':
+            return True
+        return { "color": "blue", "message": f"Invalid state {test_status}", "status": "fail" }
 
 # Open Redis, Init Template
 def open_redis(template: str, data: object) -> None:

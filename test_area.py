@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QSizePolicy, QFrame, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
 from misc_widgets import QLed
 
-from objects import TestFlow, TestStage, TestWidget
+from objects import TestFlow, TestStage, TestWidget, TestFinishedBehavior
 import datetime
 
 import logging
@@ -11,7 +11,7 @@ import log_utils
 class StatusWidget(QFrame):
     def __init__(self, flow: TestFlow) -> None:
         super().__init__()
-        self._leds = {}
+        self._messages = {}
         layout = QVBoxLayout()
 
         # Header
@@ -22,40 +22,31 @@ class StatusWidget(QFrame):
 
         layout.addWidget(label)
         
-        # Setup LEDs
-        leds_layout = QHBoxLayout()
+        # Setup messages
+        messages_layout = QHBoxLayout()
         
         # One column per stage
         for stage in TestStage:
             stage_layout = QFormLayout()
             
-            self._leds[stage] = []
+            self._messages[stage] = []
             steps = flow.get_steps(stage)
 
             for step_index in range(len(steps)):
                 step = steps[step_index]
-                # Create LEDs
-                leds = [QLed() for _ in range(step.get_output_count())]
-                self._leds[stage].append(leds)
-                
-                # Display LEDs
-                line_layout = QHBoxLayout()
-                for led in leds:
-                    line_layout.addWidget(led)
-                line_widget = QWidget()
-                line_widget.setLayout(line_layout)
 
-                stage_layout.addRow(QLabel(step.get_name()), line_widget)
+                self._messages[stage].append(QLabel("Uninitialized"))
+                stage_layout.addRow(QLabel(step.get_name()), self._messages[stage][step_index])
             
             # Add Stage
             stage_widget = QWidget()
             stage_widget.setLayout(stage_layout)
-            leds_layout.addWidget(stage_widget)
+            messages_layout.addWidget(stage_widget)
 
         # Add LEDs
-        leds_widget = QWidget()
-        leds_widget.setLayout(leds_layout)
-        layout.addWidget(leds_widget)
+        messages_widget = QWidget()
+        messages_widget.setLayout(messages_layout)
+        layout.addWidget(messages_widget)
         layout.addStretch()
 
         # Final Touches
@@ -63,19 +54,20 @@ class StatusWidget(QFrame):
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setFrameShadow(QFrame.Shadow.Raised)
 
-    def set_all_leds(self, color: str):
-        for stage in self._leds:
-            for step in self._leds[stage]:
-                for led in step:
-                    led.setState(color)
+    def clear_messages(self):
+        for stage in self._messages:
+            for step in self._messages[stage]:
+                step.setText("Uninitialized")
+                step.setStyleSheet("")
 
-    def set_led(self, stage: TestStage, stepIndex: int, index: int, color: str):
-        self._leds[stage][stepIndex][index].setState(color)
+    def set_message(self, stage: TestStage, stepIndex: int, message: str, color: str):
+        self._messages[stage][stepIndex].setText(message)
+        self._messages[stage][stepIndex].setStyleSheet(f"color: {color};")
 
-    def set_leds(self, stage: TestStage, stepIndex: int, colors: str):
-        step_leds = self._leds[stage][stepIndex]
-        for i in range(len(step_leds)):
-            step_leds[i].setState(colors[i])
+    def set_messages(self, stage: TestStage, startIndex: int, message: str, color: str):
+        for label_index in range(startIndex, len(self._messages[stage])):
+            self._messages[stage][label_index].setText(message)
+            self._messages[stage][label_index].setStyleSheet(f"color: {color};")
 
 # The interaction area, which has a main widget that constantly changes
 class InteractionAreaWidget(QFrame):
@@ -118,7 +110,7 @@ class WatcherWrapperWidget(QFrame):
         self._layout = QVBoxLayout()
 
         # Header
-        label = QLabel("Outputs")
+        label = QLabel("Live Outputs")
         font = label.font()
         font.setPointSizeF(font.pointSize() * 1.5)
         label.setFont(font)
@@ -204,47 +196,17 @@ class TestArea(QWidget):
             "time_finished": datetime.datetime.now()
         }
 
-        # Set the rest of this and possibly the next stage's leds
-        if self._stage == TestStage.SETUP:
-            # How?
-            self.logger.critical("Errored in setup - how???")
-            steps = self._flow.get_steps(self._stage)
-            for index in range(self._index, len(steps)):
-                self._status.set_leds(self._stage, index, ["red" for _ in range(steps[index].get_output_count())])
-                                      
-            steps = self._flow.get_steps(TestStage.RUNTIME)
-            for index in range(len(steps)):
-                self._status.set_leds(TestStage.RUNTIME, index, ["red" for _ in range(steps[index].get_output_count())])
-        elif self._stage == TestStage.RUNTIME:
-            steps = self._flow.get_steps(self._stage)
-            for index in range(self._index, len(steps)):
-                self._status.set_leds(self._stage, index, ["red" for _ in range(steps[index].get_output_count())])
-
-        elif self._stage == TestStage.SHUTDOWN:
-            # How???
-            self.logger.critical("Errored in shutdown - how???")
-
-            # Just give up
-            self.start_new_test()
-
-            # Return as to not skip to shutdown, which would be backwards
-            return
-        
-        # Skip to Cleanup
-        self.logger.warn("Skipping to Shutdown")
-        self._stage = TestStage.SHUTDOWN
-        self._index = 0
+        self.handle_output_action({
+            "color": "red",
+            "message": f"Step crashed (See Console)",
+            "behavior": TestFinishedBehavior.SKIP_TO_CLEANUP
+        })
 
     # A step finished with data.
     # Process that data, then call the advance step function
     def step_finished(self, data):
         self.logger.info(f"Stage {self._stage} step ID {self._index} finished.")
         current_step = self._flow.get_steps(self._stage)[self._index]
-
-        # Update Colors
-        status = current_step.get_output_status(self._test_data, data)
-        self.logger.info(f"Step {current_step.get_name()} returned status {status}")
-        self._status.set_leds(self._stage, self._index, status)
 
         # Log Data
         self.logger.debug(f"Step {current_step.get_name()} returned data {data}. Assigning to {current_step.get_data_field()}")
@@ -259,31 +221,98 @@ class TestArea(QWidget):
             "time_finished": datetime.datetime.now()
         }
 
-        self.advance_one_step()
+        # Update LEDs
+        action = current_step.get_output_action(self._test_data, data)
 
-    # A step finished. Advance to the next one.
-    # If all tests are finished, start a new test
-    def advance_one_step(self) -> None:
-        self.logger.info(f"Advancing one step, from {self._stage} index {self._index}")
-        # Get Current Steps
-        current_steps = self._flow.get_steps(self._stage)
+        # Convert non-object actions
+        if type(action) == bool:
+            action = {
+                "color": "green" if action else "red",
+                "message": f"Passed" if action else "Failed",
+                "behavior": TestFinishedBehavior.NEXT_STEP
+            }
+        elif type(action) == str:
+            action = {
+                "color": "green",
+                "message": action,
+                "behavior": TestFinishedBehavior.NEXT_STEP
+            }
+        elif "message" not in action and "color" not in action and "behavior" not in action:
+            self.logger.critical(f"Invalid action reponse: {action}")
+            status = {
+                "color": "blue",
+                "message": "See Console",
+                "behavior": TestFinishedBehavior.NEXT_STEP
+            }
+
+        self.logger.info(f"Step {current_step.get_name()} returned action {action}")
+        self.handle_output_action(action)
         
-        # If we're finished with the current step
-        if self._index + 1 == len(current_steps):
-            self._index = 0
-            # Advance to the next phase if it exists
-            if self._stage == TestStage.SETUP:
-                self._stage = TestStage.RUNTIME
-            elif self._stage == TestStage.RUNTIME:
-                self._stage = TestStage.SHUTDOWN
-            elif self._stage == TestStage.SHUTDOWN:
-                self.start_new_test()
-                return
+    # Handle an output action
+    def handle_output_action(self, action):
+        self._status.set_message(self._stage, self._index, action['message'], action["color"])
+
+        # Handle behavior
+        # Advance one step
+        if action["behavior"] == TestFinishedBehavior.NEXT_STEP: 
+            self.logger.info(f"Advancing one step, from {self._stage} index {self._index}")
+            # Get Current Steps
+            current_steps = self._flow.get_steps(self._stage)
+            
+            # If we're finished with the current step
+            if self._index + 1 == len(current_steps):
+                self._index = 0
+                # Advance to the next phase if it exists
+                if self._stage == TestStage.SETUP:
+                    self._stage = TestStage.RUNTIME
+                elif self._stage == TestStage.RUNTIME:
+                    self._stage = TestStage.SHUTDOWN
+                elif self._stage == TestStage.SHUTDOWN:
+                    self.start_new_test()
+                    return
+                else:
+                    raise ValueError(f"{self._stage} is not a valid phase!")
+            # Otherwise, just advance the index
             else:
-                raise ValueError(f"{self._stage} is not a valid phase!")
-        # Otherwise, just advance the index
-        else:
-            self._index = self._index + 1
+                self._index = self._index + 1
+        
+        # Error, Skip to Cleanup
+        if action["behavior"] == TestFinishedBehavior.SKIP_TO_CLEANUP:
+            # Set the rest of this and possibly the next stage's leds
+            if self._stage == TestStage.SETUP:
+                # How?
+                self.logger.critical("Errored in setup - how???")
+
+                # Skip rest of phase
+                steps = self._flow.get_steps(self._stage)
+                for index in range(self._index, len(steps)):
+                    self._status.set_messages(self._stage, index, "Skipped - Error", "red")
+
+                # Skip all runtime    
+                steps = self._flow.get_steps(TestStage.RUNTIME)
+                for index in range(len(steps)):
+                    self._status.set_messages(TestStage.RUNTIME, index, "Skipped - Error", "red")
+
+                
+                self.logger.warning("Skipping to Shutdown")
+                self._stage = TestStage.SHUTDOWN
+                self._index = 0
+            # If errored in runtime, skip rest of runtime
+            elif self._stage == TestStage.RUNTIME:
+
+                steps = self._flow.get_steps(self._stage)
+                for index in range(self._index, len(steps)):
+                    self._status.set_messages(self._stage, index, "Skipped - Error", "red")
+
+
+                self.logger.warning("Skipping to Shutdown")
+                self._stage = TestStage.SHUTDOWN
+                self._index = 0
+            elif self._stage == TestStage.SHUTDOWN:
+                # How???
+                self.logger.critical("Errored in shutdown - how???")
+                # Just give up
+                self.start_new_test()
 
     # Call this method whenever self._stage or self._index is updated
     def update_input_area(self, reason: str) -> None:
@@ -291,7 +320,7 @@ class TestArea(QWidget):
 
         if self._stage == TestStage.SETUP and self._index == 0:
             self.logger.info("Clearing LEDs as starting from first stage!")
-            self._status.set_all_leds("grey")
+            self._status.clear_messages()
 
         step = self._flow.get_steps(self._stage)[self._index]
         self.logger.info(f"Loading widget for step {step} from stage {self._stage} at index {self._index}")
@@ -305,4 +334,4 @@ class TestArea(QWidget):
         self._interaction.set_widget(widget)
 
         # Set Indicators to Blue
-        self._status.set_leds(self._stage, self._index, ["cyan" for _ in range(step.get_output_count())])
+        self._status.set_message(self._stage, self._index, "Running...", "blue")

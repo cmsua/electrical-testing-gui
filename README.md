@@ -35,7 +35,7 @@ If the `crashed` signal is recieved instead, it is assumed the test has failed b
 
 The `advance` signal is a control signal. When `finished` and `crashed` are outputted, the widget is still displayed in the event that the user wishes to view the stage's output, if there is any. The `advance` signal should be emitted when the user opts to continue to the next test step, with data as a string for the reason (user input/automatic continuation).
 
-Additionally, each test step contains three additional methods: `step.get_name() -> str`, for use in the debug logs as well as the LED status indicators on the left, `get_output_count() -> int`, to indicate how many output LEDs the step controls, and `get_output_status(in_data, out_data) -> list[str]`. This final method should return an array of strings with a length of `get_output_count()`, each directly correlating to an output LED's color. The data passed to this function is the same data emitted in the `finished` signal. Valid colors are listed in `misc_widgets.py`.
+Additionally, each test step contains three additional methods: `step.get_name() -> str`, for use in the debug logs as well as the status indicators, and `get_output_action(in_data, out_data) -> object`. This can return a `bool` (passed/failed), a string (assume passed), or an object with keys `state: [bool]`, `color: str` and `message: str`. Additionally, this should have a `behavior: TestFinishedAction` field, which reports whether to advance to the next step afterwards or not. The data passed to this function is the same data emitted in the `finished` signal. Valid colors are listed in `misc_widgets.py`.
 
 ### Pre-provided Steps
 

@@ -47,7 +47,7 @@ class WatcherThread(QThread):
 
     def run(self):
         status = {}
-        not_initialized = ["Not Initialized", "yellow"]
+        not_initialized = ["Not Initialized", "gold"]
         
         # Check Kria Services
         try:
@@ -93,7 +93,7 @@ class WatcherThread(QThread):
             # Power
             if "POWER:DEFAULT" in redis_data:
                 value = redis_data["POWER:DEFAULT"]
-                color = "yellow" # I saw POWER:DEFAULT:PASSED in an earlier model - don't want config values here
+                color = "gold" # I saw POWER:DEFAULT:PASSED in an earlier model - don't want config values here
                 logger.debug(f"Read default power {value} with status {status}")
                 status["Power (Normal)"] = [value, color]
             else:
@@ -101,7 +101,7 @@ class WatcherThread(QThread):
 
             if "POWER:CONFIGURED" in redis_data:
                 value = redis_data["POWER:CONFIGURED"]
-                color = "yellow" # I saw POWER:DEFAULT:PASSED in an earlier model - don't want config values here
+                color = "gold" # I saw POWER:DEFAULT:PASSED in an earlier model - don't want config values here
                 logger.debug(f"Read configured power {value} with status {status}")
                 status["Power (Configured)"] = [value, color]
             else:

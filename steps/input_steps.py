@@ -140,8 +140,8 @@ class VerifyStep(TestStep):
         widget.setLayout(layout)
         return widget
     
-    def get_output_status(self, in_data, out_data: list[bool]) -> list[str]:
-        return ["green" if all(out_data) else "yellow"]
+    def get_output_action(self, in_data, out_data: list[bool]) -> list[str]:
+        return all(out_data)
 
 # A step that shows a dropdown with options and asks for one
 class SelectStep(TestStep):

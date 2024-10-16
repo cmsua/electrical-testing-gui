@@ -15,8 +15,8 @@ class CentralBarcodeStep(TextAreaStep):
     def __init__(self, name: str, message: str, data_field: str) -> None:
         super().__init__(name, message, data_field)
 
-    def get_output_status(self, in_data, out_data) -> list[str]:
-        return ['yellow' if out_data == '' else 'green']
+    def get_output_action(self, in_data, out_data) -> list[str]:
+        return out_data != ''
     
 
 class VerifyBoardStep(TestStep):
@@ -164,5 +164,6 @@ class ScanHGCROCs(TestStep):
         widget.setLayout(layout)
         return widget
     
-    def get_output_status(self, in_data, out_data: list[str]) -> list[str]:
-        return ["green" if all(out_data) else "yellow"]
+    def get_output_action(self, in_data, out_data: list[str]) -> list[str]:
+        return all(out_data)
+    

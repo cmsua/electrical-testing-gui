@@ -36,8 +36,8 @@ class TestStep(ABC):
     
     # Given data returned by the widget, returns an array with
     # length get_output_count() whose values are colors
-    def get_output_status(self, in_data, out_data) -> list[str]:
-        return ["green"]
+    def get_output_action(self, in_data, out_data) -> list[str]:
+        return True
 
     # Data is specific to this run
     # config is global and final
@@ -51,6 +51,10 @@ class TestStage(Enum):
     RUNTIME = 1
     SHUTDOWN = 2
     
+class TestFinishedBehavior(Enum):
+    SKIP_TO_CLEANUP = 0,
+    NEXT_STEP = 1
+
 
 # A test flow
 class TestFlow(ABC):
