@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton
 
 from objects import TestStep, TestWidget
 
+import traceback
 
 # A test step that runs a thread in the background, without console output
 # The step is done when the thread is finished. No value is returned
@@ -141,7 +142,7 @@ class DynamicThread(QThread):
             result = self._method(self._data)
             self.data.emit(result)
         except Exception as e:
-            self.crash.emit(e)
+            self.crash.emit(str(e) + ",\n" + traceback.format_exc())
 
 # Dynamic Thread Step
 # Used for threads that take actions dependant
