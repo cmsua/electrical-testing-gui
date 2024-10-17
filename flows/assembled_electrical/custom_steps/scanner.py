@@ -25,7 +25,7 @@ class VerifyBoardStep(TestStep):
 
     def create_widget(self, data: object) -> TestWidget:
         # Identify Board
-        scanned_barcode = data["board_barcode"]
+        scanned_barcode = data["_board_barcode"]
         found_board = boards["default"]
         found_board_key = "default"
 
@@ -109,15 +109,15 @@ class VerifyBoardStep(TestStep):
         return widget
     
 class ScanHGCROCs(TestStep):
-    def __init__(self, name: str, data_field: str):
-        super().__init__(name, data_field)
+    def __init__(self, name: str):
+        super().__init__(name)
 
     def create_widget(self, data: object) -> TestWidget:
         widget = TestWidget()
         layout = QVBoxLayout()
         
         # Board Info
-        board = boards[data["board"]]
+        board = boards[data["_board"]]
 
         # Text
         text = QLabel(f"This board should have {board['hgcrocs']} HGCROCs")
@@ -150,7 +150,10 @@ class ScanHGCROCs(TestStep):
             if not all(result):
                 widget.crashed.emit(result)
             else:
-                widget.finished.emit(result)
+                result_object = { '_explode': True }
+                for i in range(len(result)):
+                    result_object["ROC" + str(i)] = result[i]
+                widget.finished.emit(result_object)
             widget.advance.emit("Manually advanced")
 
         button = QPushButton("Next")

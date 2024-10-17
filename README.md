@@ -35,7 +35,21 @@ If the `crashed` signal is recieved instead, it is assumed the test has failed b
 
 The `advance` signal is a control signal. When `finished` and `crashed` are outputted, the widget is still displayed in the event that the user wishes to view the stage's output, if there is any. The `advance` signal should be emitted when the user opts to continue to the next test step, with data as a string for the reason (user input/automatic continuation).
 
-Additionally, each test step contains three additional methods: `step.get_name() -> str`, for use in the debug logs as well as the status indicators, and `get_output_action(in_data, out_data) -> object`. This can return a `bool` (passed/failed), a string (assume passed), or an object with keys `state: [bool]`, `color: str` and `message: str`. Additionally, this should have a `behavior: TestFinishedAction` field, which reports whether to advance to the next step afterwards or not. The data passed to this function is the same data emitted in the `finished` signal. Valid colors are listed in `misc_widgets.py`.
+Additionally, each test step contains three additional methods: `step.get_name() -> str`, for use in the debug logs as well as the status indicators, and `get_output_action(in_data, out_data) -> object`. The data passed to this function is the same data emitted in the `finished` signal. Any CSS color is valid.
+
+### Complex Data
+
+If the object emitted by the `finished` signal is of type `dict` and has the property `_explode` with value `True`, the result is assumed to be a JSON object and thus merged with `data` for future tests.
+
+### Valid Actions
+
+Returned data can be the following:
+
+- `bool` (passed/failed)
+- a string (assume passed)
+- An object with keys `state: [bool]`, `color: str`m `message: str`, and `behavior: TestFinishedAction` field.
+
+The `TestActionFinished` value reports whether to advance to the next step afterwards or not.
 
 ### Pre-provided Steps
 

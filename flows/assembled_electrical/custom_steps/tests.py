@@ -27,7 +27,7 @@ def create_dut(data: object) -> object:
 
 # Not sure what this does
 def create_sockets(address: str, kria_i2c_port: int, kria_daq_port: int, puller_port: int, data: object) -> object:
-    config_file = boards.boards[data["board"]]["board_config"]
+    config_file = boards.boards[data["_board"]]["board_config"]
 
     config_file = os.path.join("hexactrl_script", config_file)
     logger.debug(f"Identified config as {config_file}")
@@ -48,25 +48,24 @@ def create_sockets(address: str, kria_i2c_port: int, kria_daq_port: int, puller_
 
 
 # Check power supply data, calcualte power,
-# and save to redis
 def check_power_default(data: object) -> None:
     logger.info("Checking default power for the board")
 
     result = check_power(data)
     power = result["current"] * result["voltage"]
-    logger.debug(f"Recieved {result} (Power: {power}), saving to Redis")
+    logger.debug(f"Recieved {result} (Power: {power})")
 
-    data["redis"].set("POWER:DEFAULT", power)
+    # TODO What are acceptable values here?
     return power
 
 # Not sure what this does
 def configure_hgcroc(data: object) -> None:
     logger.info("Configuring HGCROC")
-    data["sockets"]["i2c"].initialize()
-
+    data["_sockets"]["i2c"].initialize()
+    # TODO No Output
 
 # Check the i2c again
-def i2c_checker_2(output_dir: str, data: object) -> None:
+def i2c_checker_configured(output_dir: str, data: object) -> None:
     logger.info("2nd I2C check after configuring")
     # The original script loaded the config again
     # That's a bit silly - we don't need to do that
@@ -77,27 +76,20 @@ def i2c_checker_2(output_dir: str, data: object) -> None:
 
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            i2c_checker.i2c_checker(data["sockets"]["i2c"], output_dir, dut)
+            result = i2c_checker.i2c_checker(data["_sockets"]["i2c"], output_dir, dut)
     logger.debug(f"i2c_checker wrote to stdout/stderr: {output.getvalue()}")
 
-    redis = data["redis"]
-    if redis.get('TEST_SUCCESS')=='FAIL':
-        logger.critical(f'I2C Failed!')
-        redis.set('I2C_CHECKER:CONFIGURED','FAIL')
-        raise RuntimeError("I2C Failed!")
-    else:
-        redis.set('I2C_CHECKER:CONFIGURED','SUCCESS')
+    return result == i2c_checker.I2CCheckerSuccess.SUCCESS
 
-# Check power supply data, calcualte power,
-# and save to redis
+# Check power supply data, calcualte power
 def check_power_configured(data: object) -> None:
     logger.info("Checking configured power for the board")
 
     result = check_power(data)
     power = result["current"] * result["voltage"]
-    logger.debug(f"Recieved {result} (Power: {power}), saving to Redis")
+    logger.debug(f"Recieved {result} (Power: {power})")
 
-    data["redis"].set("POWER:CONFIGURED", power)
+    # TODO What are acceptable values here?
     return power
 
 # Not sure what this does either
@@ -107,23 +99,23 @@ def initialize_sockets(data: object) -> None:
     # I2C, wrap stdout/stderr
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            data["sockets"]["i2c"].initialize()
+            data["_sockets"]["i2c"].initialize()
     logger.debug(f"Initialized I2C Socket; Wrote to stdout/stderr: {output.getvalue()}")
 
     # DAQ Server, wrap stdout/stderr
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            data["sockets"]["daq"].initialize()
+            data["_sockets"]["daq"].initialize()
     logger.debug(f"Initialized DAQ Socket; Wrote to stdout/stderr: {output.getvalue()}")
 
-    server_ip = data["sockets"]["daq"].ip
+    server_ip = data["_sockets"]["daq"].ip
     logger.info(f"Using {server_ip} as daq sever ip for client puller")
-    data["sockets"]["cli"].yamlConfig['client']['serverIP'] = server_ip
+    data["_sockets"]["cli"].yamlConfig['client']['serverIP'] = server_ip
 
     # Puller, wrap stdout/stderr
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            data["sockets"]["cli"].initialize()
+            data["_sockets"]["cli"].initialize()
     logger.debug(f"Initialized Puller Socket; Wrote to stdout/stderr: {output.getvalue()}")
 
 # Pedestal Run
@@ -137,15 +129,16 @@ def do_pedestal_run(output_dir: str, data: object) -> None:
     # Do pedestal run, wrap stdout/stderr
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            pedestal_run.pedestal_run(data["sockets"]["i2c"], data["sockets"]["daq"], data["sockets"]["cli"], output_dir, dut, "", "DEBUG")
+            pedestal_run.pedestal_run(data["_sockets"]["i2c"], data["_sockets"]["daq"], data["_sockets"]["cli"], output_dir, dut, "", "DEBUG")
     logger.info(f"Pedestal Run Complete, wrote to stdout/stderr: {output.getvalue()}")
 
-    redis = data["redis"]
-    if redis.get('PEDESTAL_RUN:CORRUPTION')=='FAIL':
-        logger.critical("Data corruption was found in pedestal data.")
-        raise RuntimeError("I2C Failed!")
-    else:
-        logger.info("Pedestal Run Passed")
+    ## TODO
+    #redis = data["redis"]
+    #if redis.get('PEDESTAL_RUN:CORRUPTION')=='FAIL':
+    #    logger.critical("Data corruption was found in pedestal data.")
+    #    raise RuntimeError("I2C Failed!")
+    #else:
+    #    logger.info("Pedestal Run Passed")
 
 # Run All Other Scans
 def do_trimming(output_dir: str, data: object) -> None:
@@ -154,9 +147,9 @@ def do_trimming(output_dir: str, data: object) -> None:
     dut = data["dut"]
     logger.debug(f"Using dut {dut}")
     
-    i2c_socket = data["sockets"]["i2c"]
-    daq_socket = data["sockets"]["daq"]
-    cli_socket = data["sockets"]["cli"]
+    i2c_socket = data["_sockets"]["i2c"]
+    daq_socket = data["_sockets"]["daq"]
+    cli_socket = data["_sockets"]["cli"]
 
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
@@ -177,7 +170,7 @@ def close_sockets(data: object) -> None:
     logger.info("Closing sockets")
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            data["sockets"]["i2c"].close()
-            data["sockets"]["daq"].close()
-            data["sockets"]["cli"].close()
+            data["_sockets"]["i2c"].close()
+            data["_sockets"]["daq"].close()
+            data["_sockets"]["cli"].close()
     logger.debug(f"Closing Sockets Complete, produced output {output.getvalue()}")

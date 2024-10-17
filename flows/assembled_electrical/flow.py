@@ -5,7 +5,6 @@ from objects import TestFlow, TestStage, TestStep
 
 from .custom_steps.powersupply import *
 from .custom_steps.kria import *
-from .custom_steps.redis import *
 from .custom_steps.scanner import *
 from .custom_steps.tests import *
 from .custom_steps.cleanup import cleanup
@@ -74,15 +73,6 @@ def load_step(step: object, config: object) -> TestStep:
             step["data_field"] if "data_field" in step else None,
             step["timeout"] if "timeout" in step else 0)
         
-
-        easy_redis_dynamic_thread = lambda method: DynamicThreadStepWithRedisCheck(
-            step["name"],
-            step["text"] if "text" in step else "Text Not Provided",
-            method,
-            step["auto_advance"] if "auto_advance" in step else None,
-            step["data_field"] if "data_field" in step else None,
-            step["timeout"] if "timeout" in step else 0)
-
         kria_management_url = f"http://{config['kria_address']}:{config['kria_management_port']}"
 
         # Custom Steps
@@ -119,29 +109,27 @@ def load_step(step: object, config: object) -> TestStep:
         elif step["type"] == "verify_board":
             return VerifyBoardStep(step["name"], step["data_field"])
         elif step["type"] == "scan_hgcrocs":
-            return ScanHGCROCs(step["name"], step["data_field"])
+            return ScanHGCROCs(step["name"])
         
         # Actual Tests
         elif step["type"] == "create_dut":
             return easy_dynamic_thread(create_dut)
-        elif step["type"] == "connect_redis_load_template":
-            return easy_dynamic_thread(partial(open_redis, config["redis_template"]))
         elif step["type"] == "tests_open_sockets":
-            return easy_redis_dynamic_thread(partial(create_sockets,
+            return easy_dynamic_thread(partial(create_sockets,
                 config["kria_address"],
                 config["kria_i2c_port"],
                 config["kria_daq_port"],
                 config["local_daq_port"]))
         elif step["type"] == "tests_configure_hgcrocs":
-            return easy_redis_dynamic_thread(configure_hgcroc)
-        elif step["type"] == "tests_i2c_checker":
-            return easy_redis_dynamic_thread(partial(i2c_checker_2, config["output_dir"]))
+            return easy_dynamic_thread(configure_hgcroc)
+        elif step["type"] == "tests_i2c_checker_configured":
+            return easy_dynamic_thread(partial(i2c_checker_configured, config["output_dir"]))
         elif step["type"] == "tests_pedestal_run":
-            return easy_redis_dynamic_thread(partial(do_pedestal_run, config["output_dir"]))
+            return easy_dynamic_thread(partial(do_pedestal_run, config["output_dir"]))
         elif step["type"] == "tests_initialize_sockets":
-            return easy_redis_dynamic_thread(initialize_sockets)
+            return easy_dynamic_thread(initialize_sockets)
         elif step["type"] == "tests_trimming":
-            return easy_redis_dynamic_thread(partial(do_trimming, config["output_dir"]))
+            return easy_dynamic_thread(partial(do_trimming, config["output_dir"]))
         
         # Cleanup
         elif step["type"] == "cleanup":

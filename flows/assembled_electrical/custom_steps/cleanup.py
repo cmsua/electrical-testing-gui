@@ -15,7 +15,7 @@ def filter_no_logs(info: tarfile.TarInfo) -> tarfile.TarInfo:
 
 # Compresses all test data to a tar.gz
 # This excludes analysis (eg. plots) and only includes raw data
-def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, redis_data: object) -> None:
+def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, data: object) -> None:
     logger.info(f"Archiving { test_id }")
     archive_path = os.path.join(data_dir, f"{ test_id }.tar.gz")
     
@@ -29,10 +29,10 @@ def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, redis_
         logger.debug(f"Writing final output")
 
         # Add Redis Data
-        redis_data_text = json.dumps(redis_data, indent=2)
-        logger.debug(f"Adding redis data {redis_data_text}")
+        data_text = json.dumps(data, indent=2)
+        logger.debug(f"Adding redis data {data_text}")
 
-        redis_bytes = redis_data_text.encode('utf-8')
+        redis_bytes = data_text.encode('utf-8')
         redis_bytes_io = io.BytesIO(redis_bytes)
         
         file_info = tarfile.TarInfo('run.log')
@@ -54,8 +54,10 @@ def cleanup(out_dir: str, data: object) -> None:
     dut = data["dut"]
     logger.debug(f"Using dut {dut}")
 
-    logger.info("Dumping Redis")
-    redis_data = data["redis"].client.hgetall(dut)
-
     logger.info("Archiving tests")
-    archive_test(out_dir, dut, True, redis_data)
+    filtered_data = {}
+    for key in data:
+        if key.startswith("_"):
+            continue
+        filtered_data[key] = data[key]
+    archive_test(out_dir, dut, True, filtered_data)

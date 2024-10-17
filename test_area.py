@@ -7,6 +7,9 @@ import datetime
 import logging
 import log_utils
 
+
+logger = logging.getLogger("testing")
+
 # This contains all the LEDs
 class StatusWidget(QWidget):
     def __init__(self, flow: TestFlow) -> None:
@@ -103,9 +106,8 @@ class TestArea(QWidget):
     def __init__(self, flow: TestFlow) -> None:
         super().__init__()
         # Logs
-        self.logger = logging.getLogger("testing")
-        self.logger.info("Created Test Area.")
-        self.logger.info(f"Using flow {flow}")
+        logger.info("Created Test Area.")
+        logger.info(f"Using flow {flow}")
 
         # Initial Variables
         self._flow = flow
@@ -142,9 +144,9 @@ class TestArea(QWidget):
     # Start a new test!
     def start_new_test(self):
         # Wipe Logs
-        self.logger.info("Starting New Test. Clearing Logs...")
+        logger.info("Starting New Test. Clearing Logs...")
         log_utils.logs = []
-        self.logger.info("Starting New Test. Logs Cleared.")
+        logger.info("Starting New Test. Logs Cleared.")
 
         self._stage = TestStage.SETUP
         self._index = 0
@@ -154,9 +156,9 @@ class TestArea(QWidget):
     # A step crashed with an error
     # Process that, skip to cleanup
     def step_crashed(self, error):
-        self.logger.critical(f"Stage {self._stage} step ID {self._index} crashed with error {error}")
+        logger.critical(f"Stage {self._stage} step ID {self._index} crashed with error {error}")
         current_step = self._flow.get_steps(self._stage)[self._index]
-        self.logger.critical(f"Step name: {current_step.get_name()}")
+        logger.critical(f"Step name: {current_step.get_name()}")
 
         # Save Debug Data
         if self._stage not in self._debug_data:
@@ -176,12 +178,28 @@ class TestArea(QWidget):
     # A step finished with data.
     # Process that data, then call the advance step function
     def step_finished(self, data):
-        self.logger.info(f"Stage {self._stage} step ID {self._index} finished.")
+        logger.debug(f"Stage {self._stage} step ID {self._index} finished.")
         current_step = self._flow.get_steps(self._stage)[self._index]
 
         # Log Data
-        self.logger.debug(f"Step {current_step.get_name()} returned data {data}. Assigning to {current_step.get_data_field()}")
-        self._test_data[current_step.get_data_field()] = data
+        # Case: Returned "EXPLODE data"
+        data_field = current_step.get_data_field()
+        if type(data) == dict and "_explode" in data and data["_explode"]:
+            logger.debug(f"Step {current_step.get_name()} returned data {data}.")
+            logger.debug(f"Ignoring data field!")
+
+            for key in data:
+                if key == "_explode":
+                    pass
+                value = data[key]
+
+                logger.debug(f"Assigning key {key} and data {value}")
+                self._test_data[key] = value
+        elif data_field != None:
+            logger.debug(f"Step {current_step.get_name()} returned data {data}. Assigning to {data_field}")
+            self._test_data[data_field] = data
+        elif data != None:
+            logger.critical(f"Step {current_step.get_name()} returned data {data} but isn't exploded and doesn't have a data field!")
 
         # Save Debug Data
         if self._stage not in self._debug_data:
@@ -209,14 +227,14 @@ class TestArea(QWidget):
                 "behavior": TestFinishedBehavior.NEXT_STEP
             }
         elif "message" not in action and "color" not in action and "behavior" not in action:
-            self.logger.critical(f"Invalid action reponse: {action}")
+            logger.critical(f"Invalid action reponse: {action}")
             status = {
                 "color": "blue",
                 "message": "See Console",
                 "behavior": TestFinishedBehavior.NEXT_STEP
             }
 
-        self.logger.info(f"Step {current_step.get_name()} returned action {action}")
+        logger.info(f"Step {current_step.get_name()} returned action {action}")
         self.handle_output_action(action)
         
     # Handle an output action
@@ -226,7 +244,7 @@ class TestArea(QWidget):
         # Handle behavior
         # Advance one step
         if action["behavior"] == TestFinishedBehavior.NEXT_STEP: 
-            self.logger.info(f"Advancing one step, from {self._stage} index {self._index}")
+            logger.info(f"Advancing one step, from {self._stage} index {self._index}")
             # Get Current Steps
             current_steps = self._flow.get_steps(self._stage)
             
@@ -252,7 +270,7 @@ class TestArea(QWidget):
             # Set the rest of this and possibly the next stage's leds
             if self._stage == TestStage.SETUP:
                 # How?
-                self.logger.critical("Errored in setup - how???")
+                logger.critical("Errored in setup - how???")
 
                 # Skip rest of phase
                 steps = self._flow.get_steps(self._stage)
@@ -265,7 +283,7 @@ class TestArea(QWidget):
                     self._status.set_messages(TestStage.RUNTIME, index, "Skipped - Error", "red")
 
                 
-                self.logger.warning("Skipping to Shutdown")
+                logger.warning("Skipping to Shutdown")
                 self._stage = TestStage.SHUTDOWN
                 self._index = 0
             # If errored in runtime, skip rest of runtime
@@ -275,27 +293,26 @@ class TestArea(QWidget):
                 for index in range(self._index, len(steps)):
                     self._status.set_messages(self._stage, index, "Skipped - Error", "red")
 
-
-                self.logger.warning("Skipping to Shutdown")
+                logger.warning("Skipping to Shutdown")
                 self._stage = TestStage.SHUTDOWN
                 self._index = 0
             elif self._stage == TestStage.SHUTDOWN:
                 # How???
-                self.logger.critical("Errored in shutdown - how???")
+                logger.critical("Errored in shutdown - how???")
                 # Just give up
                 self.start_new_test()
 
     # Call this method whenever self._stage or self._index is updated
     def update_input_area(self, reason: str) -> None:
-        self.logger.info(f"Updating input with reason {reason}")
+        logger.debug(f"Updating input with reason {reason}")
 
         if self._stage == TestStage.SETUP and self._index == 0:
-            self.logger.info("Clearing LEDs as starting from first stage!")
+            logger.info("Clearing LEDs as starting from first stage!")
             self._status.clear_messages()
 
         step = self._flow.get_steps(self._stage)[self._index]
-        self.logger.info(f"Loading widget for step {step} from stage {self._stage} at index {self._index}")
-        self.logger.debug(f"Loading widget with test data {self._test_data}")
+        logger.info(f"Loading widget for step {step} from stage {self._stage} at index {self._index}")
+        logger.info(f"Loading widget with test data {self._test_data}")
 
         # Load New Widget
         widget = step.create_widget(self._test_data)

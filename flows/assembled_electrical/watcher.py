@@ -7,15 +7,17 @@ import requests
 import time
 from functools import partial
 
+from .custom_steps import powersupply
+
 logger = logging.getLogger("watcher")
 
-non_redis_labels = ["DAQ Client",
+pulled_labels = ["DAQ Client",
           "Kria", "Power Supply"]
 
 def check_status(status, _):
-    if status == "PASS":
+    if status == "PASS" or status == True:
         return ["Passed", "green"]
-    elif status == "FAIL":
+    elif status == "FAIL" or status == False:
         return ["Failed", "red"]
     else:
         return [f"Unknown: {status}", "blue"]
@@ -34,7 +36,7 @@ def pedestal_run_validator(key, _, data):
 
     return [f"{noisy} Noisy, {dead} Dead", color]
 
-redis_labels = {
+data_labels = {
     "Test Status": {
         "key": "TEST_SUCCESS",
         "validator": check_status
@@ -127,11 +129,10 @@ class WatcherThread(QThread):
 
             # Check Power Supply
             try:
-                if "power_supply" in self.data:
-                    self.data["power_supply"]["lock"].acquire()
-                    voltage = float(self.data["power_supply"]["supply"].query("MEASure:VOLTage? CH1"))
-                    current = float(self.data["power_supply"]["supply"].query("MEASure:CURRent? CH1"))
-                    self.data["power_supply"]["lock"].release()
+                if "_power_supply" in self.data:
+                    result = powersupply.check_power(self.data)
+                    voltage = result["voltage"]
+                    current = result["current"]
 
                     logger.debug(f"Read Power Supply values {voltage}V {current}A")
                     status["Power Supply"] = [f"{voltage}V {current}A", "green"]
@@ -140,26 +141,17 @@ class WatcherThread(QThread):
             except Exception as e:
                 logger.critical(f"Power Supply failed with {e}")
 
-            # Redis Values
-            if "redis" in self.data:
-                redis = self.data["redis"]
-                redis_data = redis.client.hgetall(redis.key)
-
-                for key in redis_labels:
-                    if "key" in redis_labels[key]:
-                        redis_key = redis_labels[key]["key"]
-                        if redis_key in redis_data:
-                            obj = redis_data[redis_key]
-                            status[key] = redis_labels[key]["validator"](obj, redis_data)
-                        else:
-                            status[key] = not_initialized
+            # Data Values
+            for key in data_labels:
+                if "key" in data_labels[key]:
+                    data_key = data_labels[key]["key"]
+                    if data_key in self.data:
+                        obj = self.data[data_key]
+                        status[key] = data_labels[key]["validator"](obj, self.data)
                     else:
-                        status[key] = redis_labels[key]["validator"](redis_data)
-
-            else:
-                logger.debug("Tests not started, skipping...")
-                for text in redis_labels:
-                    status[text] = not_initialized
+                        status[key] = not_initialized
+                else:
+                    status[key] = data_labels[key]["validator"](self.data)
 
             self.output.emit(status)
         except Exception as e:
@@ -185,10 +177,10 @@ class Watcher(QWidget):
         
         # Text Fields
         self.text_fields = {}
-        for text in non_redis_labels:
+        for text in pulled_labels:
             self.text_fields[text] = QLabel("Uninitialized")
             layout.addRow(QLabel(text), self.text_fields[text])
-        for key in redis_labels:
+        for key in data_labels:
             self.text_fields[key] = QLabel("Uninitialized")
             layout.addRow(QLabel(key), self.text_fields[key])
 

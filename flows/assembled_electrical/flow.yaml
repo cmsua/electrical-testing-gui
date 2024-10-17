@@ -5,7 +5,6 @@ config:
   kria_i2c_port: 5555
   kria_management_port: 8080
   local_daq_port: 6001
-  redis_template: flows/assembled_electrical/redis-template.yaml
   users:
     - Nathan Nguyen
     - Anonymous
@@ -34,7 +33,7 @@ initialization:
   
   - name: "Wait for Power Supply"
     type: power_supply_wait
-    data_field: power_supply
+    data_field: _power_supply
     text: |-
       Ensure that the power supply is on, and reading the following values:
       1.5V, 3.23A, No Channels On
@@ -52,16 +51,15 @@ initialization:
   # Data Entry
   - name: "Board Identification"
     type: scan_board
-    data_field: board_barcode
+    data_field: _board_barcode
     text: "Scan the central board barcode text below"
   
   - name: "Board Verification"
     type: verify_board
-    data_field: board
+    data_field: _board
 
   - name: "Scan HGCROCs"
     type: scan_hgcrocs
-    data_field: hgcrocs
 
   # Physical Setup
   - name: "Hexaboard In Stand"
@@ -107,7 +105,7 @@ initialization:
   
   - name: "Comments"
     type: textarea
-    data_field: pre_test_comments
+    data_field: PRETEST_COMMENTS
     text: "Enter Pre-Test Comments"
     accept_empty: true
     optional: true
@@ -132,13 +130,6 @@ runtime:
     timeout: 1
     auto_advance: true
     text: "Generating a uuid for dut"
-  
-  - name: "Load Redis Template"
-    type: connect_redis_load_template
-    data_field: redis
-    timeout: 1
-    auto_advance: true
-    text: "Loading Redis Templates..."
 
   - name: "Load Firmware"
     type: kria_load_firmware
@@ -155,19 +146,20 @@ runtime:
 
   - name: "Create Sockets"
     type: tests_open_sockets
-    data_field: sockets
+    data_field: _sockets
     timeout: 1
     auto_advance: true
     text: "Creating Sockets. If this hangs, something's gone wrong."
 
   - name: "Check Power (Default)"
     type: power_supply_check_power_default
+    data_field: POWER:DEFAULT
     timeout: 5
     auto_advance: true
     text: "Checking Pre-Configuration Power"
 
   # TODO Bias Volate?
-  # TODO I2C Space Check, will fail!
+  # TODO I2C Checker (Power On) - we don't have the defaults for our board version
 
   - name: "Configure HGCROCs"
     type: tests_configure_hgcrocs
@@ -175,14 +167,16 @@ runtime:
     auto_advance: true
     text: "Configuring the HGCROCs..."
 
-  - name: "I2C Checker"
-    type: tests_i2c_checker
+  - name: "I2C Checker (Configured)"
+    type: tests_i2c_checker_configured
+    data_field: I2C_CHECKER:CONFIGURED
     timeout: 60
     auto_advance: true
     text: "Running the I2C Checker..."
 
   - name: "Check Power (Configured)"
     type: power_supply_check_power_configured
+    data_field: POWER:CONFIGURED
     timeout: 5
     auto_advance: true
     text: "Checking Post-Configuration Power"
@@ -210,7 +204,7 @@ runtime:
 
   - name: "Comments"
     type: textarea
-    data_field: post_test_comments
+    data_field: COMMENTS
     text: "Enter Post-Test Comments"
     accept_empty: true
     optional: true
