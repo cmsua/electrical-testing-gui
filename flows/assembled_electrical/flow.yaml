@@ -192,8 +192,18 @@ runtime:
     timeout: 60
     auto_advance: true
 
-  - name: "Trimming"
-    type: tests_trimming
+  - name: "Pedestal Scan"
+    type: tests_pedestal_scan
+    timeout: 60
+    auto_advance: true
+
+  - name: "vrefinf"
+    type: tests_vrefinv
+    timeout: 60
+    auto_advance: true
+
+  - name: "vrefnoinv"
+    type: tests_vrefnoinv
     timeout: 60
     auto_advance: true
 

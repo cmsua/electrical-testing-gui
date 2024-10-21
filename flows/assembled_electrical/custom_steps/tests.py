@@ -156,10 +156,9 @@ def check_pedestal_run(data: object) -> object:
     #else:
     #    logger.info("Pedestal Run Passed")
 
-# Run All Other Scans
-def do_trimming(output_dir: str, data: object) -> None:
-    logger.info("Doing all scans!")
-
+# Do a Pedestal Scan
+def do_pedestal_scan(output_dir: str, data: object) -> None:
+    logger.info("Doing a pedestal scan!")
     dut = data["dut"]
     logger.debug(f"Using dut {dut}")
     
@@ -171,26 +170,62 @@ def do_trimming(output_dir: str, data: object) -> None:
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
             returned_data = pedestal_scan.pedestal_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
-            for key in returned_data:
-                out_data[f"TRIM_INV:{key}"] = returned_data[key]
+
+    for key in returned_data:
+        out_data[f"TRIM_INV:{key}"] = returned_data[key]
+        
     logger.info(f"Pedestal Scan Complete, returned {returned_data}")
     logger.debug(f"Pedestal Scan Complete, wrote to stdout/stderr {output.getvalue()}")
 
+    return out_data
+
+# Do a vrefinv
+def do_vrefinv(output_dir: str, data: object) -> None:
+    logger.info("Doing a vrefinv")
+    dut = data["dut"]
+    logger.debug(f"Using dut {dut}")
+    
+    i2c_socket = data["_sockets"]["i2c"]
+    daq_socket = data["_sockets"]["daq"]
+    cli_socket = data["_sockets"]["cli"]
+
+    out_data = { "_explode": True }
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
             returned_data = vrefinv_scan.vrefinv_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
-            for key in returned_data:
-                out_data[f"INV_VREF:{key}"] = returned_data[key]
+
+    for key in returned_data:
+        out_data[f"INV_VREF:{key}"] = returned_data[key]
+        
     logger.info(f"VRefInv Scan Complete, produced output {returned_data}")
     logger.debug(f"VRefInv Scan Complete, wrote to stdout/stderr {output.getvalue()}")
 
+    return out_data
+
+# Do a vrefnoinv
+def do_vrefnoinv(output_dir: str, data: object) -> None:
+    logger.info("Doing a vrefnoinv")
+    dut = data["dut"]
+    logger.debug(f"Using dut {dut}")
+    
+    i2c_socket = data["_sockets"]["i2c"]
+    daq_socket = data["_sockets"]["daq"]
+    cli_socket = data["_sockets"]["cli"]
+
+    out_data = { "_explode": True }
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
             returned_data = vrefnoinv_scan.vrefnoinv_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
             for key in returned_data:
                 out_data[f"NOINV_VREF:{key}"] = returned_data[key]
+
+    for key in returned_data:
+        out_data[f"NOINV_VREF:{key}"] = returned_data[key]
+        
     logger.debug(f"VRefNoInv Scan Complete, produced output {returned_data}")
     logger.debug(f"VRefNoInv Scan Complete, wrote to stdout/stderr {output.getvalue()}")
+
+    return out_data
 
 def close_sockets(data: object) -> None:
     logger.info("Closing sockets")

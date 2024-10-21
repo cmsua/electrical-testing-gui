@@ -37,10 +37,6 @@ def pedestal_run_validator(key, _, data):
     return [f"{noisy} Noisy, {dead} Dead", color]
 
 data_labels = {
-    "Test Status": {
-        "key": "TEST_SUCCESS",
-        "validator": check_status
-    },
     "Power (Default)": {
         "key": "POWER:DEFAULT",
         "validator": lambda val, data: [str(val), "green"] if True else [str(val), "red"] #TODO I heard about a success/fail value but never seen it impl
@@ -55,6 +51,14 @@ data_labels = {
     },
     "I2C Checker (Configured)": {
         "key": "I2C_CHECKER:CONFIGURED",
+        "validator": check_status
+    },
+    "Pedestal Run Corruption": {
+        "key": "PEDESTAL_RUN:CORRUPTION",
+        "validator": check_status
+    },
+    "Pedestal Run Success": {
+        "key": "PEDESTAL_RUN:TEST_SUCCESS",
         "validator": check_status
     },
     "Pedestal Run 0-0 Status": {
@@ -80,10 +84,6 @@ data_labels = {
     "Pedestal Run 2-1 Status": {
         "key": "PEDESTAL_RUN:0:0:NUMBER_CHANNELS_NOISE_AT0",
         "validator": partial(pedestal_run_validator, "PEDESTAL_RUN:2:1:")
-    },
-    "Pedestal Run Corruption": {
-        "key": "PEDESTAL_RUN:CORRUPTION",
-        "validator": check_status
     }
 }
 

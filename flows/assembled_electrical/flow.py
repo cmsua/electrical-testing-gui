@@ -124,12 +124,16 @@ def load_step(step: object, config: object) -> TestStep:
             return easy_dynamic_thread(configure_hgcroc)
         elif step["type"] == "tests_i2c_checker_configured":
             return easy_dynamic_thread(partial(i2c_checker_configured, config["output_dir"]))
-        elif step["type"] == "tests_pedestal_run":
-            return easy_dynamic_thread(partial(do_pedestal_run, config["output_dir"]))
         elif step["type"] == "tests_initialize_sockets":
             return easy_dynamic_thread(initialize_sockets)
-        elif step["type"] == "tests_trimming":
-            return easy_dynamic_thread(partial(do_trimming, config["output_dir"]))
+        elif step["type"] == "tests_pedestal_run":
+            return easy_dynamic_thread(partial(do_pedestal_run, config["output_dir"]))
+        elif step["type"] == "tests_pedestal_scan":
+            return easy_dynamic_thread(partial(do_pedestal_scan, config["output_dir"]))
+        elif step["type"] == "tests_vrefinv":
+            return easy_dynamic_thread(partial(do_vrefinv, config["output_dir"]))
+        elif step["type"] == "tests_vrefnoinv":
+            return easy_dynamic_thread(partial(do_vrefnoinv, config["output_dir"]))
         
         # Cleanup
         elif step["type"] == "cleanup":
