@@ -12,7 +12,6 @@ PyQt6-sip==13.6.0
 PyVISA==1.14.1
 pyvisa-py==0.7.2
 pyyaml==6.0.2
-redis==5.0.8
 requests==2.32.3
 scipy==1.10.1
 sesaborn=0.12.2

@@ -47,7 +47,7 @@ Returned data can be the following:
 
 - `bool` (passed/failed)
 - a string (assume passed)
-- An object with keys `state: [bool]`, `color: str`m `message: str`, and `behavior: TestFinishedAction` field.
+- An object with keys `color: str`m `message: str`, and `behavior: TestFinishedBehavior` field.
 
 The `TestActionFinished` value reports whether to advance to the next step afterwards or not.
 

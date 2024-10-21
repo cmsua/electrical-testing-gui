@@ -6,6 +6,7 @@ import io
 import contextlib
 import uuid
 
+from objects import TestFinishedBehavior
 from .. import boards
 from .powersupply import check_power
 from hexactrl_script import zmq_controler as zmqctrl
@@ -76,7 +77,7 @@ def i2c_checker_configured(output_dir: str, data: object) -> None:
 
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            result = i2c_checker.i2c_checker(data["_sockets"]["i2c"], output_dir, dut)
+            result = i2c_checker.i2c_checker(data["_sockets"]["i2c"], output_dir, dut, "", logging.getLogger("I2C Checker"))
     logger.debug(f"i2c_checker wrote to stdout/stderr: {output.getvalue()}")
 
     return result == i2c_checker.I2CCheckerSuccess.SUCCESS
@@ -129,9 +130,24 @@ def do_pedestal_run(output_dir: str, data: object) -> None:
     # Do pedestal run, wrap stdout/stderr
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            pedestal_run.pedestal_run(data["_sockets"]["i2c"], data["_sockets"]["daq"], data["_sockets"]["cli"], output_dir, dut, "", "DEBUG")
-    logger.info(f"Pedestal Run Complete, wrote to stdout/stderr: {output.getvalue()}")
+            returned_data = pedestal_run.pedestal_run(data["_sockets"]["i2c"], data["_sockets"]["daq"], data["_sockets"]["cli"], output_dir, dut, "", "DEBUG")
+    logger.info(f"Pedestal Run complete, returned {data}")
+    logger.debug(f"Pedestal Run wrote to stdout/stderr: {output.getvalue()}")
 
+    out_data = { "_explode": True }
+    for key in returned_data:
+        out_data[f"PEDESTAL_RUN:{key}"] = returned_data[key]
+    return out_data
+    
+def check_pedestal_run(data: object) -> object:
+    if data["CORRUPTION"] == "FAIL":
+        return {
+            "color": "red",
+            "message": "Data corruption in pedestal data",
+            "action": TestFinishedBehavior.SKIP_TO_CLEANUP
+        }
+    else:
+        return True
     ## TODO
     #redis = data["redis"]
     #if redis.get('PEDESTAL_RUN:CORRUPTION')=='FAIL':
@@ -151,20 +167,30 @@ def do_trimming(output_dir: str, data: object) -> None:
     daq_socket = data["_sockets"]["daq"]
     cli_socket = data["_sockets"]["cli"]
 
+    out_data = { "_explode": True }
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            pedestal_scan.pedestal_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
-    logger.debug(f"Pedestal Scan Complete, produced output {output.getvalue()}")
+            returned_data = pedestal_scan.pedestal_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
+            for key in returned_data:
+                out_data[f"TRIM_INV:{key}"] = returned_data[key]
+    logger.info(f"Pedestal Scan Complete, returned {returned_data}")
+    logger.debug(f"Pedestal Scan Complete, wrote to stdout/stderr {output.getvalue()}")
 
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            vrefinv_scan.vrefinv_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
-    logger.debug(f"VRefInv Scan Complete, produced output {output.getvalue()}")
+            returned_data = vrefinv_scan.vrefinv_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
+            for key in returned_data:
+                out_data[f"INV_VREF:{key}"] = returned_data[key]
+    logger.info(f"VRefInv Scan Complete, produced output {returned_data}")
+    logger.debug(f"VRefInv Scan Complete, wrote to stdout/stderr {output.getvalue()}")
 
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):
-            vrefnoinv_scan.vrefnoinv_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
-    logger.debug(f"VRefNoInv Scan Complete, produced output {output.getvalue()}")
+            returned_data = vrefnoinv_scan.vrefnoinv_scan(i2c_socket, daq_socket, cli_socket, output_dir, dut)
+            for key in returned_data:
+                out_data[f"NOINV_VREF:{key}"] = returned_data[key]
+    logger.debug(f"VRefNoInv Scan Complete, produced output {returned_data}")
+    logger.debug(f"VRefNoInv Scan Complete, wrote to stdout/stderr {output.getvalue()}")
 
 def close_sockets(data: object) -> None:
     logger.info("Closing sockets")

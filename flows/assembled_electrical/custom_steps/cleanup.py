@@ -28,16 +28,16 @@ def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, data: 
     with tarfile.open(archive_path, "w:gz") as tar:
         logger.debug(f"Writing final output")
 
-        # Add Redis Data
+        # Add Data
         data_text = json.dumps(data, indent=2)
-        logger.debug(f"Adding redis data {data_text}")
+        logger.debug(f"Adding data {data_text}")
 
-        redis_bytes = data_text.encode('utf-8')
-        redis_bytes_io = io.BytesIO(redis_bytes)
+        data_bytes = data_text.encode('utf-8')
+        data_bytes_io = io.BytesIO(data_bytes)
         
         file_info = tarfile.TarInfo('run.log')
-        file_info.size = len(redis_bytes)
-        tar.addfile(file_info, redis_bytes_io)
+        file_info.size = len(data_bytes)
+        tar.addfile(file_info, data_bytes_io)
 
         # Add Files
         if os.path.exists(os.path.join(data_dir, test_id)):

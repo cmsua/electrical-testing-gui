@@ -1,3 +1,4 @@
 [submodule "hexactrl_script"]
 	path = hexactrl_script
 	url = ssh://git@gitlab.cern.ch:7999/nathanal/hexactrl-script.git
+	branch = feature-hexaboard-production-test
