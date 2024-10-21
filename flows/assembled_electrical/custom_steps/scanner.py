@@ -1,9 +1,9 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QRadioButton, QLabel, QPushButton, QLineEdit, QSizePolicy
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QRadioButton, QLabel, QPushButton, QLineEdit
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
 from objects import TestWidget, TestStep
-from steps.input_steps import TextAreaStep
+from steps.input_steps import LineEditStep
 from ..boards import boards
 
 import logging
@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger("scanner")
 
 
-class CentralBarcodeStep(TextAreaStep):
+class CentralBarcodeStep(LineEditStep):
     def __init__(self, name: str, message: str, data_field: str) -> None:
         super().__init__(name, message, data_field)
 

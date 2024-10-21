@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QPushButton, QRadioButton, QComboBox, QTextEdit
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QPushButton, QRadioButton, QComboBox, QTextEdit, QLineEdit
 
 from objects import TestStep, TestWidget
 
@@ -181,7 +181,7 @@ class SelectStep(TestStep):
         widget.setLayout(layout)
         return widget
     
-# A step that shows a dropdown with options and asks for one
+# A step that shows a text area and prompt
 class TextAreaStep(TestStep):
     def __init__(self, name: str, message: str, data_field: str = None) -> None:
         super().__init__(name, data_field)
@@ -206,6 +206,43 @@ class TextAreaStep(TestStep):
         # Select Button
         def finish():
              widget.finished.emit(text.toMarkdown())
+             widget.advance.emit("Manually advanced")
+
+        button = QPushButton("Finish")
+        button.clicked.connect(finish)
+        layout.addWidget(button)
+
+        # Focus Area
+        widget.displayed.connect(text.setFocus)
+
+        # Wrapup
+        widget.setLayout(layout)
+        return widget
+    
+# A step that shows a line edit and prompt
+class LineEditStep(TestStep):
+    def __init__(self, name: str, message: str, data_field: str = None) -> None:
+        super().__init__(name, data_field)
+        self._message = message
+
+    def create_widget(self, data: object) -> TestWidget:
+        widget = TestWidget()
+        layout = QVBoxLayout()
+        
+        # Text, Selector
+        label = QLabel(self._message)
+        layout.addWidget(label)
+
+        # Text Area
+        text = QLineEdit()
+        layout.addWidget(text)
+
+        # Stretch
+        layout.addStretch()
+
+        # Select Button
+        def finish():
+             widget.finished.emit(text.text())
              widget.advance.emit("Manually advanced")
 
         button = QPushButton("Finish")
