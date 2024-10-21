@@ -30,10 +30,6 @@ class TestStep(ABC):
     def get_data_field(self) -> str:
         return self._data_field
     
-    # How many output LEDs there are
-    def get_output_count(self) -> int:
-        return 1
-    
     # Given data returned by the widget, returns an array with
     # length get_output_count() whose values are colors
     def get_output_action(self, in_data, out_data) -> list[str]:

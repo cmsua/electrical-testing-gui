@@ -148,9 +148,15 @@ class DynamicThread(QThread):
 # Used for threads that take actions dependant
 # on data from previous steps
 class DynamicThreadStep(ThreadStep):
-    def __init__(self, name: str, message: str, method, auto_advance: bool=False, data_field: str=None, timeout: int=0) -> None:
+    def __init__(self, name: str, message: str, method, auto_advance: bool=False, data_field: str=None, timeout: int=0, action=None) -> None:
         super().__init__(name, message, auto_advance, data_field, timeout)
         self._method = method
+        self._action = action
 
     def create_thread(self, data):
         return DynamicThread(self._method, data)
+    
+    def get_output_action(self, in_data, out_data):
+        if (self._action):
+            return self._action(in_data, out_data)
+        return super().get_output_action(in_data, out_data)

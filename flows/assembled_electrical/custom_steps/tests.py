@@ -139,12 +139,18 @@ def do_pedestal_run(output_dir: str, data: object) -> None:
         out_data[f"PEDESTAL_RUN:{key}"] = returned_data[key]
     return out_data
     
-def check_pedestal_run(data: object) -> object:
-    if data["CORRUPTION"] == "FAIL":
+def check_pedestal_run(input_data: object, data: object) -> object:
+    if data["PEDESTAL_RUN:CORRUPTION"] == "FAIL":
         return {
             "color": "red",
             "message": "Data corruption in pedestal data",
-            "action": TestFinishedBehavior.SKIP_TO_CLEANUP
+            "behavior": TestFinishedBehavior.SKIP_TO_CLEANUP
+        }
+    elif data["PEDESTAL_RUN:TEST_SUCCESS"] == "FAIL":
+        return {
+            "color": "red",
+            "message": "Failed",
+            "behavior": TestFinishedBehavior.NEXT_STEP
         }
     else:
         return True

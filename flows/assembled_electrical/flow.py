@@ -65,13 +65,16 @@ def load_step(step: object, config: object) -> TestStep:
                 step["image"] if "image" in step else None,
                 step["error_on_missing"] if "error_on_missing" in step else None)
         
-        easy_dynamic_thread = lambda method: DynamicThreadStep(
+        easy_dynamic_thread_with_validator = lambda method, validator: DynamicThreadStep(
             step["name"],
             step["text"] if "text" in step else "Text Not Provided",
             method,
             step["auto_advance"] if "auto_advance" in step else None,
             step["data_field"] if "data_field" in step else None,
-            step["timeout"] if "timeout" in step else 0)
+            step["timeout"] if "timeout" in step else 0,
+            validator)
+
+        easy_dynamic_thread = lambda method: easy_dynamic_thread_with_validator(method, None)
         
         kria_management_url = f"http://{config['kria_address']}:{config['kria_management_port']}"
 
@@ -127,7 +130,7 @@ def load_step(step: object, config: object) -> TestStep:
         elif step["type"] == "tests_initialize_sockets":
             return easy_dynamic_thread(initialize_sockets)
         elif step["type"] == "tests_pedestal_run":
-            return easy_dynamic_thread(partial(do_pedestal_run, config["output_dir"]))
+            return easy_dynamic_thread_with_validator(partial(do_pedestal_run, config["output_dir"]), check_pedestal_run)
         elif step["type"] == "tests_pedestal_scan":
             return easy_dynamic_thread(partial(do_pedestal_scan, config["output_dir"]))
         elif step["type"] == "tests_vrefinv":
