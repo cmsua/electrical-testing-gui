@@ -3,7 +3,6 @@ config:
   kria_address: 10.116.24.233
   kria_daq_port: 6000
   kria_i2c_port: 5555
-  kria_management_port: 8080
   local_daq_port: 6001
   users:
     - Nathan Nguyen
@@ -27,6 +26,7 @@ initialization:
   
   - name: "Wait for Kria"
     type: kria_wait
+    data_field: _kria
     text: "Ensure that the Kria is powered on and connected to the network. This may take a minute or two to load."
     delay: 0.05
     auto_advance: true
@@ -139,7 +139,7 @@ runtime:
   
   - name: "Restart Services"
     type: kria_restart_services
-    timeout: 1
+    timeout: 10
     auto_advance: true
     text: "Waiting for services to restart..."
     delay: 0.05

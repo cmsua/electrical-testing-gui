@@ -38,8 +38,7 @@ class AssembledHexaboardFlow(TestFlow):
             return self._shutdown_steps
     
     def get_watcher(self, fetch_data) -> QWidget:
-        kria_management_url = f"http://{self._config['config']['kria_address']}:{self._config['config']['kria_management_port']}"
-        return Watcher(kria_management_url, fetch_data)
+        return Watcher(fetch_data)
 
 def load_steps(steps: object, config: object) -> list[TestStep]:
     loaded_steps = []
@@ -76,7 +75,7 @@ def load_step(step: object, config: object) -> TestStep:
 
         easy_dynamic_thread = lambda method: easy_dynamic_thread_with_validator(method, None)
         
-        kria_management_url = f"http://{config['kria_address']}:{config['kria_management_port']}"
+        kria_address = config['kria_address']
 
         # Custom Steps
         if step["type"] == "select_user":
@@ -84,15 +83,15 @@ def load_step(step: object, config: object) -> TestStep:
         
         # Kria
         elif step["type"] == "kria_wait":
-            return easy_dynamic_thread(partial(wait_for_kria, kria_management_url, step["delay"]))
+            return easy_dynamic_thread(partial(wait_for_kria, kria_address, step["delay"]))
         elif step["type"] == "kria_enable":
-            return easy_dynamic_thread(partial(enable_kria, kria_management_url))
+            return easy_dynamic_thread(enable_kria)
         elif step["type"] == "kria_load_firmware":
-            return easy_dynamic_thread(partial(load_firmware, kria_management_url))
+            return easy_dynamic_thread_with_validator(load_firmware, load_firmware_validator)
         elif step["type"] == "kria_restart_services":
-            return easy_dynamic_thread(partial(restart_services, kria_management_url, step["delay"]))
+            return easy_dynamic_thread(partial(restart_services, step["delay"]))
         elif step["type"] == "kria_disable":
-            return easy_dynamic_thread(partial(disable_kria, kria_management_url))
+            return easy_dynamic_thread(disable_kria)
 
         # Power Supply
         elif step["type"] == "power_supply_wait":

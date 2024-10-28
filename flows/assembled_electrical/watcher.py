@@ -4,7 +4,6 @@ from PyQt6.QtGui import QFontDatabase
 
 import logging
 import os
-import requests
 import time
 
 from .custom_steps import powersupply
@@ -58,10 +57,8 @@ def pedestal_run_validator(key, _, data):
 
 class WatcherThread(QThread):
     output = pyqtSignal(object)
-    def __init__(self, kria_address, data):
+    def __init__(self, data):
         super().__init__()
-
-        self.kria_address = kria_address
         self.data = data
 
     def run(self):
@@ -81,16 +78,22 @@ class WatcherThread(QThread):
                 
             # Check Kria Services
             try:
-                daq_response = requests.get(f"{self.kria_address}/daq", timeout=0.3).json()["text"].split("Active: ")[1].split(" since")[0]
-                logger.debug(f"Recieved daq-server status {daq_response}")
+                if "_kria" not in self.data:
+                    status["Kria"] = ["Not Initialized", "gold"]
+                else:
+                    client = self.data["_kria"]
+                    daq_text = client.exec_command("service daq-server status")[1].read().decode()
+                    daq_response = daq_text.split("Active: ")[1].split(" since")[0]
+                    logger.debug(f"Recieved daq-server status {daq_response}")
 
-                i2c_response = requests.get(f"{self.kria_address}/daq", timeout=0.3).json()["text"].split("Active: ")[1].split(" since")[0]
-                logger.debug(f"Recieved i2c-server status {i2c_response}")
+                    i2c_text = client.exec_command("service i2c-server status")[1].read().decode()
+                    i2c_response = i2c_text.split("Active: ")[1].split(" since")[0]
+                    logger.debug(f"Recieved i2c-server status {i2c_response}")
 
-                text = f"I2C: {i2c_response}\nDAQ: {daq_response}"
-                color = "green" if i2c_response == "active (running)" and daq_response == "active (running)" else "red"
-                status["Kria"] = [text, color]
-            except requests.exceptions.Timeout as exception:
+                    text = f"I2C: {i2c_response}\nDAQ: {daq_response}"
+                    color = "green" if i2c_response == "active (running)" and daq_response == "active (running)" else "red"
+                    status["Kria"] = [text, color]
+            except Exception as exception:
                 logger.critical(f"Request timed out: {exception}")
                 status["Kria"] = ["Timed Out", "red"]
 
@@ -206,10 +209,9 @@ class WatcherThread(QThread):
         time.sleep(0.1)
 
 class Watcher(QWidget):
-    def __init__(self, kria_address: str, fetch_data) -> None:
+    def __init__(self, fetch_data) -> None:
         super().__init__()
 
-        self.kria_address = kria_address
         self.fetch_data = fetch_data
         
         layout = QVBoxLayout()
@@ -271,7 +273,7 @@ class Watcher(QWidget):
         if hasattr(self, "_thread"):
             self._thread.deleteLater()
 
-        self._thread = WatcherThread(self.kria_address, self.fetch_data())
+        self._thread = WatcherThread(self.fetch_data())
         # Parse Data
         self._thread.output.connect(self.update_text_fields)
 

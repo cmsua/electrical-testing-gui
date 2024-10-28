@@ -35,7 +35,7 @@ class VariableHandler(logging.Handler):
 def setup_logging():
     # Setup color logging,
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    ch.setLevel(logging.DEBUG)
     ch.setFormatter(Formatter())
 
     varHandler = VariableHandler()
@@ -46,3 +46,9 @@ def setup_logging():
     )
 
     logging.info("Setup Logging")
+
+    # No Spammy Loggers
+    logging.getLogger("watcher").setLevel(logging.INFO)
+    logging.getLogger("paramiko").setLevel(logging.INFO)
+    logging.getLogger("pyvisa").setLevel(logging.INFO)
+    logging.getLogger("powersupply").setLevel(logging.INFO)
