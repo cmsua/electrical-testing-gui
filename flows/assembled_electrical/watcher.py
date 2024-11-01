@@ -5,6 +5,7 @@ from PyQt6.QtGui import QFontDatabase
 import logging
 import os
 import time
+import traceback
 
 from .custom_steps import powersupply
 
@@ -204,7 +205,7 @@ class WatcherThread(QThread):
 
             self.output.emit(status)
         except Exception as e:
-            logger.critical(f"Exception in watcher: {e}")
+            logger.critical(f"Exception in watcher: {e}\n{traceback.format_exc()}")
             
         time.sleep(0.1)
 
