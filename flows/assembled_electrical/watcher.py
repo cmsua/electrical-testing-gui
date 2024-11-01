@@ -8,6 +8,7 @@ import time
 import traceback
 
 from .custom_steps import powersupply
+from hexactrl_script import i2c_checker
 
 logger = logging.getLogger("watcher")
 
@@ -35,9 +36,9 @@ labels_in_tabs = [
 labels = labels_in_tabs + labels_standalone
 
 def check_status(status):
-    if status == "PASS" or status == True:
+    if status == "PASS" or status == True or status == i2c_checker.I2CCheckerSuccess.SUCCESS:
         return "green"
-    elif status == "FAIL" or status == False:
+    elif status == "FAIL" or status == False or status == i2c_checker.I2CCheckerSuccess.FAILURE:
         return "red"
     else:
         return "blue"

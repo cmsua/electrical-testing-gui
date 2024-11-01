@@ -19,7 +19,7 @@ from hexactrl_script import vrefnoinv_scan
 logger = logging.getLogger("tests")
 
 # Not sure what this does
-def create_sockets(address: str, kria_i2c_port: int, kria_daq_port: int, puller_port: int, data: object) -> object:
+def do_create_sockets(address: str, kria_i2c_port: int, kria_daq_port: int, puller_port: int, data: object) -> object:
     config_file = boards.boards[data["_board"]]["board_config"]
 
     config_file = os.path.join("hexactrl_script", config_file)
@@ -39,10 +39,9 @@ def create_sockets(address: str, kria_i2c_port: int, kria_daq_port: int, puller_
 
     return sockets
 
-
 # Check power supply data, calcualte power,
-def check_power_default(data: object) -> None:
-    logger.info("Checking default power for the board")
+def do_check_power(data: object) -> None:
+    logger.info("Checking power for the board")
 
     result = check_power(data)
     power = result["current"] * result["voltage"]
@@ -52,13 +51,41 @@ def check_power_default(data: object) -> None:
     return power
 
 # Not sure what this does
-def configure_hgcroc(data: object) -> None:
+def do_configure_hgcroc(data: object) -> None:
     logger.info("Configuring HGCROC")
     data["_sockets"]["i2c"].initialize()
     # TODO No Output
 
+
 # Check the i2c again
-def i2c_checker_configured(output_dir: str, data: object) -> None:
+def do_i2c_checker_default(output_dir: str, data: object) -> None:
+    logger.info("I2C check after power on")
+
+    dut = data["dut"]
+    logger.debug(f"Using dut {dut}")
+
+    # Load Config
+    config_file = boards.boards[data["_board"]]["i2c_default_values"]
+    config_file = os.path.join("hexactrl_script", config_file)
+    logger.debug(f"Using I2C Default config file {config_file}")
+
+    with open(config_file) as fin:
+        default1ROC = yaml.safe_load(fin)
+        config = {}
+        for key in data["_sockets"]["i2c"].yamlConfig.keys():
+            if key.find('roc_s')==0:
+                config[key]={"sc":default1ROC}
+                    
+    # Run Checker
+    with contextlib.redirect_stdout(io.StringIO()) as output:
+        with contextlib.redirect_stderr(sys.stdout):
+            result = i2c_checker.i2c_checker(data["_sockets"]["i2c"], output_dir, dut, config, logging.getLogger("I2C Checker"))
+    logger.debug(f"i2c_checker wrote to stdout/stderr: {output.getvalue()}")
+
+    return result
+
+# Check the i2c again
+def do_i2c_checker_configured(output_dir: str, data: object) -> None:
     logger.info("2nd I2C check after configuring")
     # The original script loaded the config again
     # That's a bit silly - we don't need to do that
@@ -72,21 +99,26 @@ def i2c_checker_configured(output_dir: str, data: object) -> None:
             result = i2c_checker.i2c_checker(data["_sockets"]["i2c"], output_dir, dut, "", logging.getLogger("I2C Checker"))
     logger.debug(f"i2c_checker wrote to stdout/stderr: {output.getvalue()}")
 
-    return result == i2c_checker.I2CCheckerSuccess.SUCCESS
+    return result
 
-# Check power supply data, calcualte power
-def check_power_configured(data: object) -> None:
-    logger.info("Checking configured power for the board")
-
-    result = check_power(data)
-    power = result["current"] * result["voltage"]
-    logger.debug(f"Recieved {result} (Power: {power})")
-
-    # TODO What are acceptable values here?
-    return power
+def check_i2c(in_data, out_data):
+    if out_data == i2c_checker.I2CCheckerSuccess.SUCCESS:
+        return True
+    elif out_data == i2c_checker.I2CCheckerSuccess.FAILURE:
+        return {
+            "message": "Failed!",
+            "color": "red",
+            "behavior": TestFinishedBehavior.NEXT_STEP
+        }
+    else:
+        return {
+            "message": f"Invalid Status {out_data}",
+            "color": "red",
+            "behavior": TestFinishedBehavior.NEXT_STEP
+        }
 
 # Not sure what this does either
-def initialize_sockets(data: object) -> None:
+def do_initialize_sockets(data: object) -> None:
     logger.info("Initializing sockets")
     
     # I2C, wrap stdout/stderr
@@ -138,22 +170,21 @@ def check_pedestal_run(input_data: object, data: object) -> object:
             "message": "Data corruption in pedestal data",
             "behavior": TestFinishedBehavior.SKIP_TO_CLEANUP
         }
-    elif data["PEDESTAL_RUN:TEST_SUCCESS"] == "FAIL":
+    elif "TEST_SUCCESS" in data and data["PEDESTAL_RUN:TEST_SUCCESS"] == "FAIL":
         return {
             "color": "red",
             "message": "Failed",
             "behavior": TestFinishedBehavior.NEXT_STEP
         }
+    elif "TEST_SUCCESS" in data:
+        return {
+            "color": "red",
+            "message": f"Unknown Status {data['PEDESTAL_RUN:TEST_SUCCESS']}",
+            "behavior": TestFinishedBehavior.NEXT_STEP
+        }
     else:
         return True
-    ## TODO
-    #redis = data["redis"]
-    #if redis.get('PEDESTAL_RUN:CORRUPTION')=='FAIL':
-    #    logger.critical("Data corruption was found in pedestal data.")
-    #    raise RuntimeError("I2C Failed!")
-    #else:
-    #    logger.info("Pedestal Run Passed")
-
+    
 # Do a Pedestal Scan
 def do_pedestal_scan(output_dir: str, data: object) -> None:
     logger.info("Doing a pedestal scan!")
@@ -225,7 +256,7 @@ def do_vrefnoinv(output_dir: str, data: object) -> None:
 
     return out_data
 
-def close_sockets(data: object) -> None:
+def do_close_sockets(data: object) -> None:
     logger.info("Closing sockets")
     with contextlib.redirect_stdout(io.StringIO()) as output:
         with contextlib.redirect_stderr(sys.stdout):

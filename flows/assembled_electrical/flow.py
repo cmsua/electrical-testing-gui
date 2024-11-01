@@ -48,6 +48,9 @@ def load_steps(steps: object, config: object) -> list[TestStep]:
         if skip_optional and optional:
             continue
 
+        if "enabled" in step and not step["enabled"]:
+            continue
+
         loaded_steps.append(load_step(step, config))
 
     return loaded_steps
@@ -101,9 +104,9 @@ def load_step(step: object, config: object) -> TestStep:
         elif step["type"] == "power_supply_disable":
             return easy_dynamic_thread(disable_power_supply)
         elif step["type"] == "power_supply_check_power_default":
-            return easy_dynamic_thread(check_power_default)
+            return easy_dynamic_thread(do_check_power)
         elif step["type"] == "power_supply_check_power_configured":
-            return easy_dynamic_thread(check_power_configured)
+            return easy_dynamic_thread(do_check_power)
         
         # Scanning, Board ID
         elif step["type"] == "scan_board":
@@ -115,17 +118,19 @@ def load_step(step: object, config: object) -> TestStep:
         
         # Actual Tests
         elif step["type"] == "tests_open_sockets":
-            return easy_dynamic_thread(partial(create_sockets,
+            return easy_dynamic_thread(partial(do_create_sockets,
                 config["kria_address"],
                 config["kria_i2c_port"],
                 config["kria_daq_port"],
                 config["local_daq_port"]))
         elif step["type"] == "tests_configure_hgcrocs":
-            return easy_dynamic_thread(configure_hgcroc)
+            return easy_dynamic_thread(do_configure_hgcroc)
+        elif step["type"] == "tests_i2c_checker_default":
+            return easy_dynamic_thread_with_validator(partial(do_i2c_checker_default, config["output_dir"]), check_i2c)
         elif step["type"] == "tests_i2c_checker_configured":
-            return easy_dynamic_thread(partial(i2c_checker_configured, config["output_dir"]))
+            return easy_dynamic_thread_with_validator(partial(do_i2c_checker_configured, config["output_dir"]), check_i2c)
         elif step["type"] == "tests_initialize_sockets":
-            return easy_dynamic_thread(initialize_sockets)
+            return easy_dynamic_thread(do_initialize_sockets)
         elif step["type"] == "tests_pedestal_run":
             return easy_dynamic_thread_with_validator(partial(do_pedestal_run, config["output_dir"]), check_pedestal_run)
         elif step["type"] == "tests_pedestal_scan":

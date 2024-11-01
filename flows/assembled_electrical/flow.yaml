@@ -123,7 +123,7 @@ runtime:
     text: "Ensure the central LEDs on the Kria have turned blue."
     timeout: 1
     auto_advance: true
-    
+
   - name: "Load Firmware"
     type: kria_load_firmware
     timeout: 30
@@ -150,6 +150,15 @@ runtime:
     timeout: 5
     auto_advance: true
     text: "Checking Pre-Configuration Power"
+
+
+  - name: "I2C Checker (Default)"
+    type: tests_i2c_checker_default
+    data_field: I2C_CHECKER:Default
+    timeout: 60
+    auto_advance: true
+    text: "Running the I2C Checker..."
+    enabled: false # TODO This crashes our i2c-server
 
   # TODO Bias Volate?
   # TODO I2C Checker (Power On) - we don't have the defaults for our board version
