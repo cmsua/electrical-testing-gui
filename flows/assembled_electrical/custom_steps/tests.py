@@ -176,7 +176,7 @@ def check_pedestal_run(input_data: object, data: object) -> object:
             "message": "Failed",
             "behavior": TestFinishedBehavior.NEXT_STEP
         }
-    elif "TEST_SUCCESS" in data:
+    elif "TEST_SUCCESS" in data and data["PEDESTAL_RUN:TEST_SUCCESS"] != "FAIL":
         return {
             "color": "red",
             "message": f"Unknown Status {data['PEDESTAL_RUN:TEST_SUCCESS']}",
