@@ -3,7 +3,10 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLa
 from test_area import TestArea
 from flows.assembled_electrical.flow import AssembledHexaboardFlow
 
+import logging
+import os
 import sys
+import subprocess
 
 import log_utils
 
@@ -45,9 +48,21 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     log_utils.setup_logging()
+    logger = logging.getLogger("application")
+    logger.info(f"Starting Electrical Testing GUI with arguments {sys.argv}")
 
+    # Version Check
+    logger.info("Running Version Check...")
+    version_check = subprocess.check_output(["git", "fetch", "--dry-run"], stderr=subprocess.STDOUT, cwd=os.path.dirname(__file__)).decode()
+    logger.debug(f"Returned {version_check}")
+
+    if version_check == "":
+        logger.info("You are up-to-date!")
+    else:
+        logger.critical("You are not running the latest version of the GUI.")
+
+    # Run Program
     app = QApplication(sys.argv)
-    app.setStyle('dark')
 
     window = MainWindow()
     app.exec()
