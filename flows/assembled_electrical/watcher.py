@@ -81,6 +81,8 @@ class WatcherThread(QThread):
             try:
                 if "_kria" not in self.data:
                     status["Kria"] = ["Not Initialized", "gold"]
+                elif self.data["_kria"].get_transport() is None or not self.data["_kria"].get_transport().is_active():
+                    status["Kria"] = ["Crashed, Not Active", "red"]
                 else:
                     client = self.data["_kria"]
                     daq_text = client.exec_command("service daq-server status")[1].read().decode()
