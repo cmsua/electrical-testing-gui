@@ -244,3 +244,4 @@ shutdown:
     text: "Archiving and uploading data. Please wait..."
     auto_advance: false
     timeout: 5
+    archive: false

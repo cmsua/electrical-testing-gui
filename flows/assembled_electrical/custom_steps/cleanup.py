@@ -15,7 +15,7 @@ def filter_no_logs(info: tarfile.TarInfo) -> tarfile.TarInfo:
 
 # Compresses all test data to a tar.gz
 # This excludes analysis (eg. plots) and only includes raw data
-def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, data: object) -> None:
+def archive_test(data_dir: str, test_id: str, delete_uncompressed: False) -> None:
     logger.info(f"Archiving { test_id }")
     archive_path = os.path.join(data_dir, f"{ test_id }.tar.gz")
     
@@ -28,17 +28,6 @@ def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, data: 
     with tarfile.open(archive_path, "w:gz") as tar:
         logger.debug(f"Writing final output")
 
-        # Add Data
-        data_text = json.dumps(data, indent=2)
-        logger.debug(f"Adding data {data_text}")
-
-        data_bytes = data_text.encode('utf-8')
-        data_bytes_io = io.BytesIO(data_bytes)
-        
-        file_info = tarfile.TarInfo('run.log')
-        file_info.size = len(data_bytes)
-        tar.addfile(file_info, data_bytes_io)
-
         # Add Files
         if os.path.exists(os.path.join(data_dir, test_id)):
             for file in os.listdir(os.path.join(data_dir, test_id)):
@@ -50,14 +39,27 @@ def archive_test(data_dir: str, test_id: str, delete_uncompressed: False, data: 
         shutil.rmtree(os.path.join(data_dir, test_id))
 
 # Full Cleanup of all tests
-def cleanup(out_dir: str, data: object) -> None:
+def cleanup(out_dir: str, archive: bool, data: object) -> None:
     dut = data["dut"]
     logger.debug(f"Using dut {dut}")
 
-    logger.info("Archiving tests")
+    # Create dir if not exist
+    if not os.path.exists(os.path.join(out_dir, dut)):
+        os.mkdir(os.path.join(out_dir, dut))
+
+    # Write output json
     filtered_data = {}
     for key in data:
         if key.startswith("_"):
             continue
         filtered_data[key] = data[key]
-    archive_test(out_dir, dut, True, filtered_data)
+
+    data_text = json.dumps(filtered_data, indent=2)
+
+    with open(os.path.join(out_dir, dut, "output.json"), "w") as file:
+        file.write(data_text)
+
+    # Archive Data
+    if archive:
+        logger.info("Archiving tests")
+        archive_test(out_dir, dut, True)

@@ -142,7 +142,8 @@ def load_step(step: object, config: object) -> TestStep:
         
         # Cleanup
         elif step["type"] == "cleanup":
-            return easy_dynamic_thread(partial(cleanup, config["output_dir"]))
+            archive = True if "archive" not in step else step["archive"]
+            return easy_dynamic_thread(partial(cleanup, config["output_dir"], archive))
 
     except Exception as e:
         raise ValueError("Invalid step", step, e)
