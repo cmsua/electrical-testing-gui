@@ -6,6 +6,7 @@ from objects import TestWidget, TestStep
 from steps.input_steps import LineEditStep
 from ..boards import boards
 
+import datetime
 import logging
 
 logger = logging.getLogger("scanner")
@@ -93,7 +94,7 @@ class VerifyBoardStep(TestStep):
             elif not yes_button.isChecked():
                 widget.crashed.emit("Board Mismatch Detected")
             else:
-                widget.finished.emit(found_board_key)
+                widget.finished.emit({ "_explode": True, self._data_field: found_board_key, "dut": f"{scanned_barcode}-{datetime.datetime.now()}" })
             widget.advance.emit("Manually advanced")
 
         button = QPushButton("Invalid Board, Failing..." if found_board_key == "default" else "Next")

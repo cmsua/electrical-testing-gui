@@ -114,8 +114,6 @@ def load_step(step: object, config: object) -> TestStep:
             return ScanHGCROCs(step["name"])
         
         # Actual Tests
-        elif step["type"] == "create_dut":
-            return easy_dynamic_thread(create_dut)
         elif step["type"] == "tests_open_sockets":
             return easy_dynamic_thread(partial(create_sockets,
                 config["kria_address"],

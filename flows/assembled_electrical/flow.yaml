@@ -123,14 +123,7 @@ runtime:
     text: "Ensure the central LEDs on the Kria have turned blue."
     timeout: 1
     auto_advance: true
-
-  - name: "Create dut"
-    type: create_dut
-    data_field: dut
-    timeout: 1
-    auto_advance: true
-    text: "Generating a uuid for dut"
-
+    
   - name: "Load Firmware"
     type: kria_load_firmware
     timeout: 30

@@ -18,14 +18,6 @@ from hexactrl_script import vrefnoinv_scan
 
 logger = logging.getLogger("tests")
 
-
-# Load Config Files
-def create_dut(data: object) -> object:
-    value = str(uuid.uuid4())
-    logger.info(f"Created dut {value}")
-
-    return value
-
 # Not sure what this does
 def create_sockets(address: str, kria_i2c_port: int, kria_daq_port: int, puller_port: int, data: object) -> object:
     config_file = boards.boards[data["_board"]]["board_config"]
