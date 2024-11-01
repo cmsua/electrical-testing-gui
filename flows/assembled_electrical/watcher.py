@@ -84,12 +84,13 @@ class WatcherThread(QThread):
                 elif self.data["_kria"].get_transport() is None or not self.data["_kria"].get_transport().is_active():
                     status["Kria"] = ["Crashed, Not Active", "red"]
                 else:
+                    print(1)
                     client = self.data["_kria"]
-                    daq_text = client.exec_command("service daq-server status")[1].read().decode()
+                    daq_text = client.exec_command("service daq-server status", timeout=1)[1].read().decode()
                     daq_response = daq_text.split("Active: ")[1].split(" since")[0]
                     logger.debug(f"Recieved daq-server status {daq_response}")
 
-                    i2c_text = client.exec_command("service i2c-server status")[1].read().decode()
+                    i2c_text = client.exec_command("service i2c-server status", timeout=1)[1].read().decode()
                     i2c_response = i2c_text.split("Active: ")[1].split(" since")[0]
                     logger.debug(f"Recieved i2c-server status {i2c_response}")
 
@@ -97,8 +98,8 @@ class WatcherThread(QThread):
                     color = "green" if i2c_response == "active (running)" and daq_response == "active (running)" else "red"
                     status["Kria"] = [text, color]
             except Exception as exception:
-                logger.critical(f"Request timed out: {exception}")
-                status["Kria"] = ["Timed Out", "red"]
+                logger.critical(f"Request timed out: {exception}\n{traceback.format_exc()}")
+                status["Kria"] = ["SSH Timed Out", "red"]
 
             # Check Power Supply
             try:
@@ -109,8 +110,11 @@ class WatcherThread(QThread):
 
                     logger.debug(f"Read Power Supply values {voltage}V {current}A")
                     status["Power Supply"] = [f"{voltage}V {current}A", "green"]
+                else:
+                    status["Power Supply"] = ["Not Initialized", "gold"]
             except Exception as e:
-                logger.critical(f"Power Supply failed with {e}")
+                status["Power Supply"] = ["Crashed", "red"]
+                logger.critical(f"Power Supply failed with {e}\n{traceback.format_exc()}")
 
             # Data Values
 
