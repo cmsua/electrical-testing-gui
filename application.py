@@ -6,7 +6,8 @@ from flows.assembled_electrical.flow import AssembledHexaboardFlow
 import logging
 import os
 import sys
-import subprocess
+
+import git
 
 import log_utils
 
@@ -53,13 +54,19 @@ if __name__ == "__main__":
 
     # Version Check
     logger.info("Running Version Check...")
-    version_check = subprocess.check_output(["git", "fetch", "--dry-run"], stderr=subprocess.STDOUT, cwd=os.path.dirname(__file__)).decode()
-    logger.debug(f"Returned {version_check}")
+    repo = git.Repo(os.path.dirname(__file__))
+    repo.remotes.origin.fetch()
 
-    if version_check == "":
+    local_commit = repo.head.commit
+    logger.info(f"Detected local Electrical Testing GUI commit {local_commit}")
+
+    remote_commit = repo.remotes.origin.refs[repo.active_branch.name].commit
+
+    if local_commit == remote_commit:
         logger.info("You are up-to-date!")
     else:
-        logger.critical("You are not running the latest version of the GUI.")
+        logger.critical(f"You are not running the latest version of the GUI.")
+        logger.critical(f"Remote branch is at {remote_commit}")
 
     # Run Program
     app = QApplication(sys.argv)
