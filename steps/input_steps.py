@@ -26,7 +26,7 @@ class DisplayStep(TestStep):
         # Image, if present
         if self._image_path:
             image = QLabel()
-            image.setPixmap(QPixmap(self._image_path).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio))
+            image.setPixmap(QPixmap(self._image_path).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
             
             layout.addWidget(image)
 
@@ -108,7 +108,7 @@ class VerifyStep(TestStep):
         # Image, if present
         if self._image_path:
             image = QLabel()
-            image.setPixmap(QPixmap(self._image_path).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio))
+            image.setPixmap(QPixmap(self._image_path).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
             
             content_layout.addWidget(image)
 

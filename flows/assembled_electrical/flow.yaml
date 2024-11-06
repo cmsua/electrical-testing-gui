@@ -192,27 +192,32 @@ runtime:
   - name: "Pedestal Run 1"
     type: tests_pedestal_run
     timeout: 60
-    auto_advance: true
+    auto_advance: false
+    files: pedestal_run/*/*.png
 
   - name: "Pedestal Scan"
     type: tests_pedestal_scan
     timeout: 60
-    auto_advance: true
+    auto_advance: false
+    files: pedestal_scan/*/*.png
 
   - name: "vrefinf"
     type: tests_vrefinv
     timeout: 60
-    auto_advance: true
+    auto_advance: false
+    files: vrefinv_scan/*/*.png
 
   - name: "vrefnoinv"
     type: tests_vrefnoinv
     timeout: 60
-    auto_advance: true
+    auto_advance: false
+    files: novrefinv_scan/*/*.png
 
   - name: "Pedestal Run 2"
     type: tests_pedestal_run
     timeout: 60
-    auto_advance: true
+    auto_advance: false
+    files: vrefnoinv_scan/*/*.png
 
   - name: "Comments"
     type: textarea

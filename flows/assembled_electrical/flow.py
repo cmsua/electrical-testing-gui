@@ -12,6 +12,7 @@ from .watcher import Watcher
 
 from functools import partial
 
+import glob
 import os
 
 import yaml
@@ -55,6 +56,9 @@ def load_steps(steps: object, config: object) -> list[TestStep]:
 
     return loaded_steps
 
+def fetch_images(out_dir, pattern, data):
+    return glob.glob(os.path.join(out_dir, data["dut"], pattern))
+
 # Load a step from YAML
 def load_step(step: object, config: object) -> TestStep:
     try:
@@ -66,7 +70,10 @@ def load_step(step: object, config: object) -> TestStep:
             return VerifyStep(step["name"], step["text"], step["verifications"],
                 step["image"] if "image" in step else None,
                 step["error_on_missing"] if "error_on_missing" in step else None)
-        
+                
+        kria_address = config['kria_address']
+        output_dir = config["output_dir"]
+
         easy_dynamic_thread_with_validator = lambda method, validator: DynamicThreadStep(
             step["name"],
             step["text"] if "text" in step else "Text Not Provided",
@@ -75,10 +82,19 @@ def load_step(step: object, config: object) -> TestStep:
             step["data_field"] if "data_field" in step else None,
             step["timeout"] if "timeout" in step else 0,
             validator)
+        
+        easy_dynamic_thread_with_files = lambda method, validator: DynamicThreadStep(
+            step["name"],
+            step["text"] if "text" in step else "Text Not Provided",
+            method,
+            step["auto_advance"] if "auto_advance" in step else None,
+            step["data_field"] if "data_field" in step else None,
+            step["timeout"] if "timeout" in step else 0,
+            validator,
+            partial(fetch_images, output_dir, step["files"]))
 
         easy_dynamic_thread = lambda method: easy_dynamic_thread_with_validator(method, None)
-        
-        kria_address = config['kria_address']
+
 
         # Custom Steps
         if step["type"] == "select_user":
@@ -126,19 +142,19 @@ def load_step(step: object, config: object) -> TestStep:
         elif step["type"] == "tests_configure_hgcrocs":
             return easy_dynamic_thread(do_configure_hgcroc)
         elif step["type"] == "tests_i2c_checker_default":
-            return easy_dynamic_thread_with_validator(partial(do_i2c_checker_default, config["output_dir"]), check_i2c)
+            return easy_dynamic_thread_with_validator(partial(do_i2c_checker_default, output_dir), check_i2c)
         elif step["type"] == "tests_i2c_checker_configured":
-            return easy_dynamic_thread_with_validator(partial(do_i2c_checker_configured, config["output_dir"]), check_i2c)
+            return easy_dynamic_thread_with_validator(partial(do_i2c_checker_configured, output_dir), check_i2c)
         elif step["type"] == "tests_initialize_sockets":
             return easy_dynamic_thread(do_initialize_sockets)
         elif step["type"] == "tests_pedestal_run":
-            return easy_dynamic_thread_with_validator(partial(do_pedestal_run, config["output_dir"]), check_pedestal_run)
+            return easy_dynamic_thread_with_files(partial(do_pedestal_run, output_dir), check_pedestal_run)
         elif step["type"] == "tests_pedestal_scan":
-            return easy_dynamic_thread(partial(do_pedestal_scan, config["output_dir"]))
+            return easy_dynamic_thread_with_files(partial(do_pedestal_scan, output_dir), None)
         elif step["type"] == "tests_vrefinv":
-            return easy_dynamic_thread(partial(do_vrefinv, config["output_dir"]))
+            return easy_dynamic_thread_with_files(partial(do_vrefinv, output_dir), None)
         elif step["type"] == "tests_vrefnoinv":
-            return easy_dynamic_thread(partial(do_vrefnoinv, config["output_dir"]))
+            return easy_dynamic_thread_with_files(partial(do_vrefnoinv, output_dir), None)
         
         # Cleanup
         elif step["type"] == "cleanup":

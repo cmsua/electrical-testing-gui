@@ -81,7 +81,7 @@ class VerifyBoardStep(TestStep):
         # Right Section
         # Image
         image = QLabel()
-        image.setPixmap(QPixmap(found_board["image"]).scaled(512, 512, Qt.AspectRatioMode.KeepAspectRatio))
+        image.setPixmap(QPixmap(found_board["image"]).scaled(512, 512, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         layout.addWidget(image)
 
         # Stretch
@@ -138,7 +138,7 @@ class ScanHGCROCs(TestStep):
 
         # Image
         image_label = QLabel()
-        image_label.setPixmap(QPixmap(board["hgcrocs_location"]).scaled(512, 512, Qt.AspectRatioMode.KeepAspectRatio))
+        image_label.setPixmap(QPixmap(board["hgcrocs_location"]).scaled(512, 512, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         layout.addWidget(image_label)
 
         # Stretch

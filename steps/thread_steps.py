@@ -1,9 +1,12 @@
-from PyQt6.QtCore import QThread, pyqtSignal, QTimer
-from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton, QWidget, QTabWidget, QPlainTextEdit
+from PyQt6.QtGui import QPixmap
 
 from objects import TestStep, TestWidget
 
+import glob
 import traceback
+import os
 
 # A test step that runs a thread in the background, without console output
 # The step is done when the thread is finished. No value is returned
@@ -11,11 +14,12 @@ import traceback
 class ThreadStep(TestStep):
     
     # Message is the message shown to the user
-    def __init__(self, name: str, message: str, auto_advance: bool=False, data_field: str=None, timeout: int=0) -> None:
+    def __init__(self, name: str, message: str, auto_advance: bool=False, data_field: str=None, timeout: int=0, image_fetcher=None) -> None:
         super().__init__(name, data_field)
         self._message = message
         self._auto_advance = auto_advance
         self._timeout = timeout
+        self._image_fetcher = image_fetcher
 
     def create_thread(self, data) -> QThread:
         pass
@@ -24,8 +28,13 @@ class ThreadStep(TestStep):
         widget = TestWidget()
         layout = QVBoxLayout()
 
+        # Label and Message
         label = QLabel(self._message)
         layout.addWidget(label)
+
+        result_widget = QWidget()
+        layout.addWidget(result_widget)
+
         layout.addStretch()
 
         # Tiemout Label
@@ -80,6 +89,25 @@ class ThreadStep(TestStep):
             elif self._auto_advance:
                 widget.advance.emit("Automatically advanced on thread finish")
             else:
+                # Finished normally, show files
+                if self._image_fetcher is not None:
+                    tabs = QTabWidget()
+                    for file in self._image_fetcher(data):
+                        if file.endswith(".png"):
+                            file_widget = QLabel()
+                            file_widget.setPixmap(QPixmap(file).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                        elif file.endswith(".txt") or file.endswith(".yaml"):
+                            with open(file, "r") as file_obj:
+                                file_widget = QPlainTextEdit(file_obj.read())
+                                file_widget.setEnabled(False)
+                        else:
+                            file_widget = QLabel(f"Invalid File Extension for {file}")
+                        tabs.addTab(file_widget, os.path.basename(file))
+                    result_layout = QVBoxLayout()
+                    result_layout.addWidget(tabs)
+                    result_widget.setLayout(result_layout)
+
+                # Continue Button
                 self.button.setText("Continue...")
                 self.button.setEnabled(True)
                 self.button.setFocus()
@@ -148,8 +176,8 @@ class DynamicThread(QThread):
 # Used for threads that take actions dependant
 # on data from previous steps
 class DynamicThreadStep(ThreadStep):
-    def __init__(self, name: str, message: str, method, auto_advance: bool=False, data_field: str=None, timeout: int=0, action=None) -> None:
-        super().__init__(name, message, auto_advance, data_field, timeout)
+    def __init__(self, name: str, message: str, method, auto_advance: bool=False, data_field: str=None, timeout: int=0, action=None, image_fetcher=None) -> None:
+        super().__init__(name, message, auto_advance, data_field, timeout, image_fetcher)
         self._method = method
         self._action = action
 
