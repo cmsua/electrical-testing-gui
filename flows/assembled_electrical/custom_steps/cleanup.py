@@ -3,7 +3,8 @@ import tarfile
 import shutil
 import os
 import json
-import io
+
+import log_utils
 
 logger = logging.getLogger("Cleanup")
 
@@ -58,6 +59,10 @@ def cleanup(out_dir: str, archive: bool, data: object) -> None:
 
     with open(os.path.join(out_dir, dut, "output.json"), "w") as file:
         file.write(data_text)
+
+    logger.critical("This will the the final log for this test - further ones will be wiped")
+    with open(os.path.join(out_dir, dut, "log.log"), "w") as file:
+        file.write("\n".join(log_utils.logs))
 
     # Archive Data
     if archive:
