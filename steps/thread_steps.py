@@ -92,7 +92,7 @@ class ThreadStep(TestStep):
                 # Finished normally, show files
                 if self._image_fetcher is not None:
                     tabs = QTabWidget()
-                    for file in self._image_fetcher(data):
+                    for file in sorted(self._image_fetcher(data)):
                         if file.endswith(".png"):
                             file_widget = QLabel()
                             file_widget.setPixmap(QPixmap(file).scaled(786, 786, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))

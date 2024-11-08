@@ -217,7 +217,7 @@ runtime:
     type: tests_pedestal_run
     timeout: 60
     auto_advance: false
-    files: pedestal_run/*/*.png
+    files: pedestal_run/USE_LATEST/*.png
 
   - name: "Comments"
     type: textarea

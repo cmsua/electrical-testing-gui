@@ -57,6 +57,12 @@ def load_steps(steps: object, config: object) -> list[TestStep]:
     return loaded_steps
 
 def fetch_images(out_dir, pattern, data):
+    if "USE_LATEST" in pattern:
+        parts = pattern.split("USE_LATEST/")
+        dirs = glob.glob(os.path.join(out_dir, data["dut"], parts[0], '*'))
+        timestamps = [ int(os.path.basename(it).split("_")[1]) for it in dirs]
+        path = dirs[0] if timestamps[0] > timestamps[1] else dirs[1]
+        return glob.glob(os.path.join(path, parts[1]))
     return glob.glob(os.path.join(out_dir, data["dut"], pattern))
 
 # Load a step from YAML
