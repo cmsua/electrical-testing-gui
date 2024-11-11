@@ -11,6 +11,11 @@ import git
 
 import log_utils
 
+
+# Fix Ctrl+C
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
