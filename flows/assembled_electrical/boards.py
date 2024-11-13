@@ -7,7 +7,7 @@ boards = {
         'hgcrocs_location': 'static/assembled_electrical/ld-full/hgcrocs.png',
         'hgcrocs': 3,
         'board_config': 'configs/initLD-trophyV3.yaml',
-        'i2c_default_values': 'configs/initLD-trophyV3.yaml'
+        'i2c_default_values': 'configs/si-rocv3-poweron-default.yaml'
     },
     'ld-five': {
         'name': 'Low Density Five',

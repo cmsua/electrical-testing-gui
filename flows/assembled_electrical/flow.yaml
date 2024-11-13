@@ -154,11 +154,11 @@ runtime:
 
   - name: "I2C Checker (Default)"
     type: tests_i2c_checker_default
-    data_field: I2C_CHECKER:Default
+    data_field: I2C_CHECKER:DEFAULT
     timeout: 60
     auto_advance: true
     text: "Running the I2C Checker..."
-    enabled: false # TODO This crashes our i2c-server
+    enabled: true # TODO This crashes our i2c-server
 
   # TODO Bias Volate?
   # TODO I2C Checker (Power On) - we don't have the defaults for our board version
