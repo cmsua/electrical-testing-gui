@@ -170,13 +170,13 @@ def check_pedestal_run(input_data: object, data: object) -> object:
             "message": "Data corruption in pedestal data",
             "behavior": TestFinishedBehavior.SKIP_TO_CLEANUP
         }
-    elif "TEST_SUCCESS" in data and data["PEDESTAL_RUN:TEST_SUCCESS"] == "FAIL":
+    elif "PEDESTAL_RUN:TEST_SUCCESS" in data and data["PEDESTAL_RUN:TEST_SUCCESS"] == "FAIL":
         return {
             "color": "red",
             "message": "Failed",
             "behavior": TestFinishedBehavior.NEXT_STEP
         }
-    elif "TEST_SUCCESS" in data and data["PEDESTAL_RUN:TEST_SUCCESS"] != "FAIL":
+    elif "PEDESTAL_RUN:TEST_SUCCESS" in data and data["PEDESTAL_RUN:TEST_SUCCESS"] != "FAIL":
         return {
             "color": "red",
             "message": f"Unknown Status {data['PEDESTAL_RUN:TEST_SUCCESS']}",
