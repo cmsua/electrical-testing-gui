@@ -1,5 +1,6 @@
 import time
 import logging
+import traceback
 
 import paramiko
 
@@ -26,7 +27,7 @@ def wait_for_kria(address: str, delay: int, data: object) -> None:
 
             return client
         except Exception as e:
-            logger.warning(f"Exception when connecting to kria: {e}")
+            logger.warning(f"Exception when connecting to kria: {e}\n{traceback.format_exc()}")
 
         time.sleep(delay)
 
