@@ -35,7 +35,7 @@ class VariableHandler(logging.Handler):
 def setup_logging():
     # Setup color logging,
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    ch.setLevel(logging.DEBUG)
     ch.setFormatter(Formatter())
 
     varHandler = VariableHandler()
@@ -51,6 +51,5 @@ def setup_logging():
     logging.getLogger("watcher").setLevel(logging.INFO)
     logging.getLogger("paramiko").setLevel(logging.INFO)
     logging.getLogger("pyvisa").setLevel(logging.INFO)
-    logging.getLogger("powersupply").setLevel(logging.INFO)
     logging.getLogger("daqController").setLevel(logging.INFO)
     logging.getLogger("inotifierHandler").setLevel(logging.INFO)

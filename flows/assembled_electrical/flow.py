@@ -3,7 +3,7 @@ from steps.thread_steps import DynamicThreadStep
 
 from objects import TestFlow, TestStage, TestStep
 
-from .custom_steps.powersupply import *
+from .custom_steps.powersupplies import multimodule_distribution_hub, siglent_spd3303xe
 from .custom_steps.kria import *
 from .custom_steps.scanner import *
 from .custom_steps.tests import *
@@ -24,10 +24,20 @@ class AssembledHexaboardFlow(TestFlow):
             self._config = yaml.safe_load(fin)
 
         os.environ["PATH"] = os.environ["PATH"] + ":" + os.path.abspath(os.path.join(self._config["config"]["hexactrl_sw_dir"], "bin"))
+        
+        config = self._config["config"]
+        self.power_supply = None
+        if config["power_supply"] == "siglent_spd3303xe":
+            self.power_supply = siglent_spd3303xe
+        elif config["power_supply"] == "multimodule_distribution_hub":
+            self.power_supply = multimodule_distribution_hub
+        else:
+            logger.critical(f"Unknown power supply {config['power_supply']}")
 
-        self._setup_steps = load_steps(self._config["initialization"], self._config["config"])
-        self._runtime_steps = load_steps(self._config["runtime"], self._config["config"])
-        self._shutdown_steps = load_steps(self._config["shutdown"], self._config["config"])
+
+        self._setup_steps = load_steps(self._config["initialization"], config, self.power_supply)
+        self._runtime_steps = load_steps(self._config["runtime"], config, self.power_supply)
+        self._shutdown_steps = load_steps(self._config["shutdown"], config, self.power_supply)
 
 
     def get_steps(self, stage: TestStage) -> list[TestStep]:
@@ -39,9 +49,9 @@ class AssembledHexaboardFlow(TestFlow):
             return self._shutdown_steps
     
     def get_watcher(self, fetch_data) -> QWidget:
-        return Watcher(fetch_data)
+        return Watcher(fetch_data, self.power_supply)
 
-def load_steps(steps: object, config: object) -> list[TestStep]:
+def load_steps(steps: object, config: object, power_supply: object) -> list[TestStep]:
     loaded_steps = []
     for step in steps:
         skip_optional = config["skip_optional"] if "skip_optional" in config else False
@@ -52,7 +62,7 @@ def load_steps(steps: object, config: object) -> list[TestStep]:
         if "enabled" in step and not step["enabled"]:
             continue
 
-        loaded_steps.append(load_step(step, config))
+        loaded_steps.append(load_step(step, config, power_supply))
 
     return loaded_steps
 
@@ -66,7 +76,7 @@ def fetch_images(out_dir, pattern, data):
     return glob.glob(os.path.join(out_dir, data["dut"], pattern))
 
 # Load a step from YAML
-def load_step(step: object, config: object) -> TestStep:
+def load_step(step: object, config: object, power_supply: object) -> TestStep:
     try:
         if step["type"] == "display":
             return DisplayStep(step["name"], step["text"], step["image"] if "image" in step else None)
@@ -101,7 +111,6 @@ def load_step(step: object, config: object) -> TestStep:
 
         easy_dynamic_thread = lambda method: easy_dynamic_thread_with_validator(method, None)
 
-
         # Custom Steps
         if step["type"] == "select_user":
             return SelectStep(step["name"], step["text"], config["users"])
@@ -120,15 +129,15 @@ def load_step(step: object, config: object) -> TestStep:
 
         # Power Supply
         elif step["type"] == "power_supply_wait":
-            return easy_dynamic_thread(partial(wait_for_power_supply, config["power_supply_address"], step["delay"]))
+            return easy_dynamic_thread(partial(power_supply.wait_for_power_supply, config["power_supply_address"], step["delay"]))
         elif step["type"] == "power_supply_enable":
-            return easy_dynamic_thread(enable_power_supply)
+            return easy_dynamic_thread(power_supply.enable_power_supply)
         elif step["type"] == "power_supply_disable":
-            return easy_dynamic_thread(disable_power_supply)
+            return easy_dynamic_thread(power_supply.disable_power_supply)
         elif step["type"] == "power_supply_check_power_default":
-            return easy_dynamic_thread(do_check_power)
+            return easy_dynamic_thread(partial(do_check_power, power_supply))
         elif step["type"] == "power_supply_check_power_configured":
-            return easy_dynamic_thread(do_check_power)
+            return easy_dynamic_thread(partial(do_check_power, power_supply))
         
         # Scanning, Board ID
         elif step["type"] == "scan_board":

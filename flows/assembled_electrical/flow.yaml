@@ -1,5 +1,8 @@
 config:
-  power_supply_address: TCPIP::10.116.24.138
+  # power_supply_address: TCPIP::10.116.24.138
+  # power_supply: siglent_spd3303xe
+  power_supply_address: 10.116.25.51
+  power_supply: multimodule_distribution_hub
   kria_address: 10.116.24.233
   kria_daq_port: 6000
   kria_i2c_port: 5555

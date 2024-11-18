@@ -45,6 +45,7 @@ def disable_kria(data: object) -> None:
     client = data["_kria"]
     for pin in pins:
         client.exec_command(f"echo 0 > /sys/class/gpio/gpio{str(pin)}/value")
+    client.close()
 
 # Load firmware onto the board
 def load_firmware(data: object) -> None:

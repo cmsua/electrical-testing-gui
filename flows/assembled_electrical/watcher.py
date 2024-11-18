@@ -7,7 +7,6 @@ import os
 import time
 import traceback
 
-from .custom_steps import powersupply
 from hexactrl_script import i2c_checker
 
 logger = logging.getLogger("watcher")
@@ -59,9 +58,10 @@ def pedestal_run_validator(key, _, data):
 
 class WatcherThread(QThread):
     output = pyqtSignal(object)
-    def __init__(self, data):
+    def __init__(self, data, power_supply):
         super().__init__()
         self.data = data
+        self.power_supply = power_supply
 
     def run(self):
         try:
@@ -104,12 +104,20 @@ class WatcherThread(QThread):
             # Check Power Supply
             try:
                 if "_power_supply" in self.data:
-                    result = powersupply.check_power(self.data)
-                    voltage = result["voltage"]
-                    current = result["current"]
+                    result = self.power_supply.check_power(self.data)
+                    output = []
+                    if "state" in result:
+                        output += [result["state"]]
+                    
+                    output += [f"{result['voltage']:.3f}V"]
 
-                    logger.debug(f"Read Power Supply values {voltage}V {current}A")
-                    status["Power Supply"] = [f"{voltage}V {current}A", "green"]
+                    if "current_digital" in result:
+                        output += [f"{result['current_digital']:.3f}A Digital"]
+                        output += [f"{result['current_analog']:.3f}A Analog"]
+                    else:
+                        output += [f"{result['current']:.3f}V"]
+                    current = result["current"]
+                    status["Power Supply"] = [", ".join(output), "green"]
                 else:
                     status["Power Supply"] = ["Not Initialized", "gold"]
             except Exception as e:
@@ -216,10 +224,11 @@ class WatcherThread(QThread):
         time.sleep(0.1)
 
 class Watcher(QWidget):
-    def __init__(self, fetch_data) -> None:
+    def __init__(self, fetch_data, power_supply) -> None:
         super().__init__()
 
         self.fetch_data = fetch_data
+        self.power_supply = power_supply
         
         layout = QVBoxLayout()
 
@@ -280,7 +289,7 @@ class Watcher(QWidget):
         if hasattr(self, "_thread"):
             self._thread.deleteLater()
 
-        self._thread = WatcherThread(self.fetch_data())
+        self._thread = WatcherThread(self.fetch_data(), self.power_supply)
         # Parse Data
         self._thread.output.connect(self.update_text_fields)
 

@@ -8,7 +8,6 @@ import uuid
 
 from objects import TestFinishedBehavior
 from .. import boards
-from .powersupply import check_power
 from hexactrl_script import zmq_controler as zmqctrl
 from hexactrl_script import i2c_checker
 from hexactrl_script import pedestal_run
@@ -40,10 +39,10 @@ def do_create_sockets(address: str, kria_i2c_port: int, kria_daq_port: int, pull
     return sockets
 
 # Check power supply data, calcualte power,
-def do_check_power(data: object) -> None:
+def do_check_power(power_supply: object, data: object) -> None:
     logger.info("Checking power for the board")
 
-    result = check_power(data)
+    result = power_supply.check_power(data)
     power = result["current"] * result["voltage"]
     logger.debug(f"Recieved {result} (Power: {power})")
 

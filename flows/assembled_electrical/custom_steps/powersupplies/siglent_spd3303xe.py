@@ -3,6 +3,7 @@ import pyvisa
 import logging
 
 import threading
+import traceback
 
 logger = logging.getLogger("powersupply")
 
@@ -33,8 +34,8 @@ def wait_for_power_supply(address: str, delay: int, data: object):
             ps.write("CH2:CURRent 3.23")
 
             return {"supply": ps, "lock": threading.Lock()}
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to connect to power supply: {e}\n{traceback.format_exc()}")
 
         time.sleep(delay)
 
