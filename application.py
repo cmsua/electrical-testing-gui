@@ -40,6 +40,32 @@ class MainWindow(QMainWindow):
         header.setFont(font)
         layout.addWidget(header)
 
+
+        # Version Check
+        logger.info("Running Version Check...")
+        repo = git.Repo(os.path.dirname(__file__))
+        repo.remotes.origin.fetch()
+
+        local_commit = repo.head.commit
+        logger.info(f"Detected local Electrical Testing GUI commit {local_commit}")
+
+        remote_commit = repo.remotes.origin.refs[repo.active_branch.name].commit
+
+        if local_commit == remote_commit:
+            logger.info("You are up-to-date!")
+        else:
+            logger.critical(f"You are not running the latest version of the GUI.")
+            logger.critical(f"Remote branch is at {remote_commit}")
+
+            label = QLabel(f"Oudated version! Local branch is at {local_commit}, remote at {remote_commit}")
+            font = label.font()
+            font.setPointSize(int(font.pointSize() * 2))
+            font.setBold(True)
+            label.setStyleSheet("color: red")
+            label.setFont(font)
+            layout.addWidget(label)
+
+
         # Add Testing Area
         layout.addWidget(TestArea(AssembledHexaboardFlow()))
 
@@ -56,22 +82,6 @@ if __name__ == "__main__":
     log_utils.setup_logging()
     logger = logging.getLogger("application")
     logger.info(f"Starting Electrical Testing GUI with arguments {sys.argv}")
-
-    # Version Check
-    logger.info("Running Version Check...")
-    repo = git.Repo(os.path.dirname(__file__))
-    repo.remotes.origin.fetch()
-
-    local_commit = repo.head.commit
-    logger.info(f"Detected local Electrical Testing GUI commit {local_commit}")
-
-    remote_commit = repo.remotes.origin.refs[repo.active_branch.name].commit
-
-    if local_commit == remote_commit:
-        logger.info("You are up-to-date!")
-    else:
-        logger.critical(f"You are not running the latest version of the GUI.")
-        logger.critical(f"Remote branch is at {remote_commit}")
 
     # Run Program
     app = QApplication(sys.argv)
