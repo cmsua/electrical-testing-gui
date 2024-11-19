@@ -53,6 +53,8 @@ class MainWindow(QMainWindow):
 
         if local_commit == remote_commit:
             logger.info("You are up-to-date!")
+            label = QLabel(f"Commit {local_commit}")
+            layout.addWidget(label)
         else:
             logger.critical(f"You are not running the latest version of the GUI.")
             logger.critical(f"Remote branch is at {remote_commit}")
